@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Chat - FreelancPro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h2 {
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .attach-btn {
+            background: #27ae60;
+        }
+        .attach-btn:hover {
+            background: #2ecc71;
+        }
+        .status-connected {
+            color: green;
+            font-weight: bold;
+        }
+        .status-disconnected {
+            color: red;
+            font-weight: bold;
+        }
+        .message-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .message-content {
+            flex: 1;
+        }
+        .message-time {
+            color: #999;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+        .attachment-link {
+            display: inline-block;
+            margin-left: 10px;
+            color: #e67e22;
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .attachment-link:hover {
+            text-decoration: underline;
+        }
+        .seen-status {
+            font-size: 12px;
+            color: #999;
+            min-width: 20px;
+        }
+        .seen-status.delivered {
+            color: #3498db;
+        }
+        .seen-status.seen {
+            color: #2ecc71;
+        }
+        #messagesList {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 10px;
+            background: #fafafa;
+        }
+        .button-group {
+            margin: 15px 0;
+        }
+        .attachment-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .attachment-row input[type="file"] {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🚀 FreelancPro Chat Test</h2>
+        
+        <div class="input-group">
+            <label>Your Token (JWT):</label>
+            <textarea id="tokenInput" rows="3" placeholder="Paste your JWT token here..."></textarea>
+        </div>
+        
+        <div class="input-group">
+            <label>Project ID:</label>
+            <input type="number" id="projectIdInput" placeholder="Enter Project ID" />
+        </div>
+        
+        <div class="input-group">
+            <label>Message:</label>
+            <input type="text" id="messageInput" placeholder="Type your message..." />
+        </div>
+        
+        <div class="input-group">
+            <label>Attachment (optional):</label>
+            <div class="attachment-row">
+                <input type="file" id="attachmentInput" />
+                <button class="attach-btn" onclick="sendMessageWithAttachment()">📎 Send with Attachment</button>
+            </div>
+        </div>
+        
+        <button onclick="sendMessage()">📤 Send Message</button>
+        
+        <hr>
+        
+        <div>
+            <h3>Connection Status: <span id="status" class="status-disconnected">Disconnected</span></h3>
+            <div class="button-group">
+                <button onclick="connect()">🔌 Connect to Chat</button>
+                <button onclick="disconnect()">❌ Disconnect</button>
+                <button onclick="loadConversation()">📥 Load Messages</button>
+                <button onclick="markAsSeen()">👁️ Mark as Seen</button>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div>
+            <h3>💬 Messages:</h3>
+            <div id="messagesList"></div>
+        </div>
+    </div>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("http://proafree.runasp.net/chatHub", {
+                accessTokenFactory: () => document.getElementById("tokenInput").value
+            })
+            .withAutomaticReconnect()
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        // ========== استقبال رسالة جديدة ==========
+        connection.on("ReceiveMessage", (message) => {
+            console.log("📩 New message received:", message);
+            const senderText = (message.senderId === getCurrentUserId()) ? "You" : `User ${message.senderId}`;
+            const seenStatus = message.isSeen ? '✓✓' : '✓';
+            addMessageToList(message.id, `[${new Date(message.sentAt).toLocaleTimeString()}] ${senderText}: ${message.message}`, seenStatus, message.isSeen, message.attachmentUrl);
+            
+            if (message.receiverId === getCurrentUserId()) {
+                markAsSeen();
+            }
+        });
+
+        // ========== تأكيد إرسال الرسالة ==========
+        connection.on("MessageSent", (message) => {
+            console.log("✅ Message sent confirmation:", message);
+            addMessageToList(message.id, `[${new Date(message.sentAt).toLocaleTimeString()}] You: ${message.message}`, '✓', false, message.attachmentUrl);
+        });
+
+        // ========== استقبال إشعار إن الرسائل اتشافوا ==========
+        connection.on("MessagesSeen", (projectId) => {
+            console.log("👀 Messages seen for project:", projectId);
+            document.querySelectorAll('.seen-status').forEach(el => {
+                if (el.classList.contains('delivered')) {
+                    el.classList.remove('delivered');
+                    el.classList.add('seen');
+                    el.innerHTML = '✓✓';
+                }
+            });
+        });
+
+        // ========== الاتصال ==========
+        async function connect() {
+            const token = document.getElementById("tokenInput").value;
+            if (!token) {
+                alert("Please enter your JWT token!");
+                return;
+            }
+
+            try {
+                await connection.start();
+                document.getElementById("status").innerHTML = "Connected ✅";
+                document.getElementById("status").className = "status-connected";
+                console.log("Connected to ChatHub!");
+            } catch (err) {
+                console.error("Connection failed:", err);
+                alert("Connection failed: " + err);
+            }
+        }
+
+        // ========== قطع الاتصال ==========
+        async function disconnect() {
+            try {
+                await connection.stop();
+                document.getElementById("status").innerHTML = "Disconnected";
+                document.getElementById("status").className = "status-disconnected";
+                console.log("Disconnected from ChatHub!");
+            } catch (err) {
+                console.error("Disconnect failed:", err);
+            }
+        }
+
+        // ========== رفع ملف الشات ==========
+        async function uploadChatAttachment(file) {
+            const token = document.getElementById("tokenInput").value;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const response = await fetch('http://proafree.runasp.net/api/user/upload-attachment', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(error || 'Upload failed');
+            }
+            
+            const data = await response.json();
+            return data.attachmentUrl;
+        }
+
+        // ========== إرسال رسالة مع مرفق ==========
+        async function sendMessageWithAttachment() {
+            const projectId = document.getElementById("projectIdInput").value;
+            const message = document.getElementById("messageInput").value;
+            const fileInput = document.getElementById("attachmentInput");
+            const file = fileInput.files[0];
+
+            if (!projectId) {
+                alert("Enter Project ID!");
+                return;
+            }
+
+            if (!message && !file) {
+                alert("Enter a message or select a file!");
+                return;
+            }
+
+            try {
+                let attachmentUrl = null;
+                
+                if (file) {
+                    document.getElementById("status").innerHTML = "Uploading file...";
+                    attachmentUrl = await uploadChatAttachment(file);
+                    document.getElementById("status").innerHTML = "Connected ✅";
+                    document.getElementById("status").className = "status-connected";
+                }
+                
+                await connection.invoke("SendMessage", parseInt(projectId), message || "", attachmentUrl);
+                
+                document.getElementById("messageInput").value = "";
+                fileInput.value = "";
+                
+            } catch (err) {
+                console.error("Send message failed:", err);
+                alert("Failed to send message: " + err.message);
+                document.getElementById("status").innerHTML = "Connected ✅";
+                document.getElementById("status").className = "status-connected";
+            }
+        }
+
+        // ========== إرسال رسالة عادية ==========
+        async function sendMessage() {
+            const projectId = document.getElementById("projectIdInput").value;
+            const message = document.getElementById("messageInput").value;
+
+            if (!projectId || !message) {
+                alert("Enter Project ID and Message!");
+                return;
+            }
+
+            try {
+                await connection.invoke("SendMessage", parseInt(projectId), message, null);
+                document.getElementById("messageInput").value = "";
+            } catch (err) {
+                console.error("SendMessage failed:", err);
+                alert("Failed to send message: " + err);
+            }
+        }
+
+        // ========== فتح المرفق في المتصفح (Preview) ==========
+       // ========== فتح المرفق في المتصفح (Preview) ==========
+async function previewAttachment(fileUrl) {
+    const token = document.getElementById("tokenInput").value;
+    
+    try {
+        const response = await fetch(`http://proafree.runasp.net/api/user/preview-attachment?fileUrl=${encodeURIComponent(fileUrl)}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Preview failed');
+        }
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        
+    } catch (err) {
+        console.error('Preview failed:', err);
+        alert('Preview failed: ' + err.message);
+    }
+}
+
+        // ========== تحميل المحادثة القديمة ==========
+        async function loadConversation() {
+            const projectId = document.getElementById("projectIdInput").value;
+            const token = document.getElementById("tokenInput").value;
+            
+            if (!projectId) {
+                alert("Enter Project ID!");
+                return;
+            }
+            
+            if (!token) {
+                alert("Enter JWT Token!");
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://proafree.runasp.net/api/user/conversation/${projectId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const messages = await response.json();
+                
+                console.log("📚 Conversation history loaded:", messages);
+                
+                document.getElementById("messagesList").innerHTML = "";
+                
+                if (messages.length === 0) {
+                    addMessageToList(0, "No messages yet. Start the conversation!", '', false, null);
+                } else {
+                    messages.forEach(msg => {
+                        const senderText = (msg.senderId === getCurrentUserId()) ? "You" : `User ${msg.senderId}`;
+                        const seenStatus = msg.isSeen ? '✓✓' : (msg.senderId === getCurrentUserId() ? '✓' : '');
+                        addMessageToList(msg.id, `[${new Date(msg.sentAt).toLocaleTimeString()}] ${senderText}: ${msg.message}`, seenStatus, msg.isSeen, msg.attachmentUrl);
+                    });
+                    
+                    setTimeout(() => markAsSeen(), 500);
+                }
+                
+            } catch (err) {
+                console.error("Failed to load conversation:", err);
+                alert("Failed to load conversation: " + err.message);
+            }
+        }
+
+        // ========== Mark as Seen ==========
+        async function markAsSeen() {
+            const projectId = document.getElementById("projectIdInput").value;
+            
+            if (!projectId) {
+                return;
+            }
+            
+            try {
+                const token = document.getElementById("tokenInput").value;
+                await fetch(`http://proafree.runasp.net/api/user/conversation/${projectId}/seen`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (connection.state === signalR.HubConnectionState.Connected) {
+                    await connection.invoke("MarkMessagesAsSeen", parseInt(projectId));
+                }
+                
+                console.log("✅ Marked as seen");
+            } catch (err) {
+                console.error("Mark as seen failed:", err);
+            }
+        }
+
+        // ========== Helper: إضافة رسالة للـ UI ==========
+        function addMessageToList(id, text, seenIcon, isSeen, attachmentUrl = null) {
+            const div = document.createElement("div");
+            div.className = "message-item";
+            div.id = `msg-${id}`;
+            
+            const contentSpan = document.createElement("span");
+            contentSpan.className = "message-content";
+            contentSpan.textContent = text;
+            
+            // لو فيه مرفق، نضيف رابط للفتح في المتصفح
+            if (attachmentUrl) {
+                const fileName = attachmentUrl.split('/').pop();
+                const attachLink = document.createElement('a');
+                attachLink.href = '#';
+                attachLink.textContent = ` 📎 ${fileName}`;
+                attachLink.className = 'attachment-link';
+                attachLink.onclick = (e) => {
+                    e.preventDefault();
+                    previewAttachment(attachmentUrl);  // ✅ فتح في المتصفح
+                };
+                contentSpan.appendChild(attachLink);
+            }
+            
+            const statusSpan = document.createElement("span");
+            statusSpan.className = `seen-status ${isSeen ? 'seen' : 'delivered'}`;
+            statusSpan.innerHTML = seenIcon;
+            
+            div.appendChild(contentSpan);
+            div.appendChild(statusSpan);
+            
+            document.getElementById("messagesList").appendChild(div);
+            document.getElementById("messagesList").scrollTop = document.getElementById("messagesList").scrollHeight;
+        }
+
+        // ========== Helper: نجيب UserId من التوكن ==========
+        function getCurrentUserId() {
+            const token = document.getElementById("tokenInput").value;
+            if (!token) return null;
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.Id || payload.sub || payload.nameid || 
+                       payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+            } catch (e) {
+                console.error("Failed to parse token:", e);
+                return null;
+            }
+        }
+
+        // ========== إرسال بالـ Enter ==========
+        document.getElementById("messageInput").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                const file = document.getElementById("attachmentInput").files[0];
+                if (file) {
+                    sendMessageWithAttachment();
+                } else {
+                    sendMessage();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
