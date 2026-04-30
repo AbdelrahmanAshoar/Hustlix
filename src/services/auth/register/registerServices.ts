@@ -1,5 +1,6 @@
 // services/auth/register/registerServices.ts
 import { RegisterDto } from "@/app/services/types/user";
+import { API_BASE_URL } from "@/config";
 
 export const registerServices = async (
   data: RegisterDto,
@@ -21,7 +22,7 @@ export const registerServices = async (
     }
 
     const res = await fetch(
-      "http://proafree.runasp.net/api/User/register",
+      `${API_BASE_URL}/api/User/register`,
       {
         method: "POST",
         body: formData, // Don't set Content-Type header - browser will set it with boundary

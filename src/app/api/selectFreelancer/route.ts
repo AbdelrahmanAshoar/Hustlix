@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     const res = await fetch(
-      "http://proafree.runasp.net/api/Client/select-freelancer",
+      `${API_BASE_URL}/api/Client/select-freelancer`,
       {
         method: "POST",
         headers: {

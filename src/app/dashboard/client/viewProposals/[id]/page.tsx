@@ -24,6 +24,7 @@ import { getProjectProposals } from "@/services/client/getProjectProposals";
 import { selectFreelancer } from "@/services/client/selectFreelancer";
 import { toast } from "sonner";
 import { Proposal } from "@/app/services/types/client";
+import { API_BASE_URL } from "@/config";
 
 export default function ViewProposalsPage() {
   const params = useParams();
@@ -57,7 +58,7 @@ const fetchProposals = async () => {
     const token = getCookie('token');
 
     const response = await fetch(
-      `http://proafree.runasp.net/api/Client/project-proposals/filter?ProjectId=${projectId}`,
+      `${API_BASE_URL}/api/Client/project-proposals/filter?ProjectId=${projectId}`,
       {
         method: "GET",
         headers: {

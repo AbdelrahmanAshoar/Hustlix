@@ -8,8 +8,11 @@ export interface User {
   id: number;
   fullName: string;
   email: string;
+  phoneNumber: string | null;
+  bio: string | null;
   role: string;
-  profilePictureUrl: string | null;
+  profilePictureUrl: string | null ;
+  
 }
 
 interface AuthContextType {

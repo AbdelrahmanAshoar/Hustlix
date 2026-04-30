@@ -31,7 +31,6 @@ import {
 import { useState } from "react";
 
 export default function ClientDashboard({ data }: { data: clientProjects[] }) {
-  console.log(data);
   const [projects, setProjects] = useState(data);
   const [isLoading, setIsLoading] = useState(false);
 

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";
 
 export async function GET(
@@ -9,7 +10,7 @@ export async function GET(
     const token = cookieStore.get("token")?.value;
 
     const res = await fetch(
-      `http://proafree.runasp.net/api/Freelancer/GetProject/${params.id}`,
+      `${API_BASE_URL}/api/Freelancer/GetProject/${params.id}`,
       {
         method: "GET",
         headers: {

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config"
 import { cookies } from "next/headers"
 export async function PUT(
   req: Request,
@@ -7,7 +8,7 @@ export async function PUT(
   const token = cookieStore.get("token")?.value
 
   const res = await fetch(
-    `http://proafree.runasp.net/api/Client/close-project/${params.id}`,
+    `${API_BASE_URL}/api/Client/close-project/${params.id}`,
     {
       method: "PUT",
       headers: {

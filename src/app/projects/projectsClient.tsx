@@ -202,7 +202,7 @@ export default function projectsClient({ data }: { data: ProjectData[] }) {
             {searchTerm && (
               <div className="bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  Searching for: <strong>"{searchTerm}"</strong>
+                  Searching for: <strong>&quot;{searchTerm}&quot;</strong>
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   Found {filteredProjects.length} results

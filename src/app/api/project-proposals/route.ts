@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";
 
 export async function GET(req: Request) {
@@ -9,7 +10,7 @@ export async function GET(req: Request) {
     const projectId = searchParams.get("ProjectId");
 
     const res = await fetch(
-      `http://proafree.runasp.net/api/Client/project-proposals/filter?ProjectId=${projectId}`,
+      `${API_BASE_URL}/api/Client/project-proposals/filter?ProjectId=${projectId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

@@ -1,20 +1,17 @@
 "use client";
 
-import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Briefcase, Link, Mail, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface ProfileFormData {
-  fullName: string;
-  phoneNumber: string;
-  bio: string;
-  profilePictureUrl: string;
-}
-
-interface Toast {
-  message: string;
-  type: "success" | "error";
-}
+import { API_BASE_URL } from "@/config";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
+import SettingsSidebar from "@/components/settings/SettingsSidebar";
+import PublicProfileSection from "@/components/settings/PublicProfileSection";
+import AccountSection from "@/components/settings/AccountSection";
+import ProfessionalInfoSection from "@/components/settings/ProfessionalInfoSection";
+import PortfolioSection from "@/components/settings/PortfolioSection";
+import type { SettingsTab } from "@/components/settings/types";
 
 function getCookie(name: string) {
   if (typeof document === "undefined") return null;
@@ -24,837 +21,371 @@ function getCookie(name: string) {
   return null;
 }
 
-export default function SettingsPage() {
-  const { user, userRole, updateUser } = useAuth();
+function normalizeImageUrl(url?: string | null) {
+  if (!url) return "/default.png";
+  if (url.startsWith("data:image")) return url;
+  if (url.startsWith("http")) return url;
+  return `${API_BASE_URL}${url}`;
+}
 
-  const [formData, setFormData] = useState<ProfileFormData>({
+export default function SettingsPage() {
+  const { user, updateUser } = useAuth();
+  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+
+  const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
     bio: "",
     profilePictureUrl: "",
   });
 
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<Toast | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>("");
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [email, setEmail] = useState("");
+  const [userRole, setUserRole] = useState("");
 
-  useEffect(() => {
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        fullName: prev.fullName || user.fullName || "",
-        profilePictureUrl: prev.profilePictureUrl || user.profilePictureUrl || "",
-      }));
-      if (user.profilePictureUrl) {
-        setAvatarPreview(user.profilePictureUrl);
+  const [jobTitle, setJobTitle] = useState("");
+  const [payPalEmail, setPayPalEmail] = useState("");
+  const [cvFile, setCvFile] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [skillName, setSkillName] = useState("");
+  const [skillCategory, setSkillCategory] = useState("");
+  const [skillRelevanceScore, setSkillRelevanceScore] = useState("");
+
+  const [mainLink, setMainLink] = useState("");
+  const [projects, setProjects] = useState<string[]>([]);
+  const [projectInput, setProjectInput] = useState("");
+
+  const [skillLoading, setSkillLoading] = useState(false);
+  const [profileProgress, setProfileProgress] = useState(0);
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cvFileRef = useRef<HTMLInputElement>(null);
+
+  const freelancerApiBase = `${API_BASE_URL}/api/Freelancer`;
+  const effectiveRole = userRole || user?.role || "";
+  const isClient = effectiveRole === "Client";
+  const isFreelancer = effectiveRole === "Freelancer";
+
+  const fetchFreelancerSkills = useCallback(async () => {
+    if (!isFreelancer) return;
+    const token = getCookie("token");
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${freelancerApiBase}/my-skills`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      });
+
+      const payload = await res.json();
+      const rawList = Array.isArray(payload)
+        ? payload
+        : Array.isArray((payload as { data?: unknown }).data)
+        ? (payload as { data?: unknown }).data
+        : [];
+
+      const parsedSkills = (rawList as unknown[])
+        .filter(
+          (item): item is { name: string } =>
+            typeof item === "object" &&
+            item !== null &&
+            "name" in item &&
+            typeof (item as { name?: unknown }).name === "string"
+        )
+        .map((item) => item.name);
+
+      if (parsedSkills.length > 0) {
+        setSkills(parsedSkills);
       }
+    } catch (error) {
+      console.error("Failed to fetch freelancer skills", error);
+    }
+  }, [isFreelancer, freelancerApiBase]);
+
+  const handleAddSkill = async () => {
+    const name = skillName.trim();
+    const category = skillCategory.trim() || "general";
+    const relevanceScore = Number(skillRelevanceScore);
+
+    if (!name) {
+      toast.error("Skill name is required");
+      return;
+    }
+    if (!skillCategory.trim()) {
+      toast.error("Skill category is required");
+      return;
+    }
+    if (!skillRelevanceScore.trim() || Number.isNaN(relevanceScore) || relevanceScore < 0 || relevanceScore > 100) {
+      toast.error("Enter a relevance score between 0 and 100");
+      return;
     }
 
-    const fetchProfile = async () => {
-      if (userRole !== "Freelancer") {
+    setSkillLoading(true);
+    try {
+      const token = getCookie("token");
+      if (!token) {
+        toast.error("Login first");
         return;
       }
 
+      const response = await fetch(`${freelancerApiBase}/add-skill`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, category, relevanceScore }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result?.message || "Unable to add skill");
+
+      setSkillName("");
+      setSkillCategory("");
+      setSkillRelevanceScore("");
+      await fetchFreelancerSkills();
+      toast.success(`Skill "${name}" added successfully`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unable to add skill";
+      toast.error(message);
+    } finally {
+      setSkillLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchProfile = async () => {
       const token = getCookie("token");
       if (!token) return;
 
       try {
-        const response = await fetch(
-          "http://proafree.runasp.net/api/Freelancer/my-portfolio",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            cache: "no-store",
-          }
-        );
+        const res = await fetch(`${API_BASE_URL}/api/User/my-profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        const data = await res.json();
 
-        if (!response.ok) {
-          console.error("Failed to load profile:", response.status, response.statusText);
-          return;
-        }
-
-        const data = await response.json();
+        const photo = data?.personalInfo?.photoUrl;
         setFormData((prev) => ({
           ...prev,
-          fullName: data.fullName ?? prev.fullName,
-          phoneNumber: data.phoneNumber ?? prev.phoneNumber,
-          bio: data.bio ?? prev.bio,
-          profilePictureUrl: data.profilePictureUrl ?? prev.profilePictureUrl,
+          fullName: data.personalInfo?.fullName ?? prev.fullName,
+          phoneNumber: data.personalInfo?.phone ?? prev.phoneNumber,
+          bio: data.professionalInfo?.about ?? prev.bio,
+          profilePictureUrl: photo ?? prev.profilePictureUrl,
         }));
 
-        if (data.profilePictureUrl) {
-          setAvatarPreview(data.profilePictureUrl);
+        setAddress(data.personalInfo?.address ?? "");
+        setEmail(data.auth?.email ?? "");
+        const fetchedRole = data.auth?.userRole ?? "";
+        setUserRole(fetchedRole);
+
+        setJobTitle(data.professionalInfo?.jobTitle ?? "");
+        setPayPalEmail(data.professionalInfo?.payPalEmail ?? "");
+        setCvFile(data.professionalInfo?.cvFile ?? "");
+        setSkills(data.professionalInfo?.skills ?? []);
+
+        setMainLink(data.portfolio?.mainLink ?? "");
+        setProjects(data.portfolio?.projects ?? []);
+        setProfileProgress(data.profileProgress ?? 0);
+
+        if (fetchedRole === "Freelancer") {
+          await fetchFreelancerSkills();
+        } else {
+          setSkills([]);
         }
       } catch (error) {
-        console.error("Error fetching profile data:", error);
+        console.error(error);
       }
     };
 
     fetchProfile();
-  }, [user, userRole]);
-
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ message, type });
-    if (toastTimeout.current) clearTimeout(toastTimeout.current);
-    toastTimeout.current = setTimeout(() => setToast(null), 3500);
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      showToast("Please upload a valid image file.", "error");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setAvatarPreview(result);
-      // In a real app, you'd upload the image to a storage service
-      // and get back a URL to store. For now we simulate with a placeholder.
+    if (user) {
       setFormData((prev) => ({
         ...prev,
-        profilePictureUrl: result, // replace with real uploaded URL
+        fullName: user.fullName || "",
+        phoneNumber: user.phoneNumber || "",
+        bio: user.bio || "",
+        profilePictureUrl: normalizeImageUrl(user.profilePictureUrl),
       }));
-    };
-    reader.readAsDataURL(file);
+    }
+  }, [user, fetchFreelancerSkills]);
+
+  useEffect(() => {
+    if (!isFreelancer && (activeTab === "professional" || activeTab === "portfolio")) {
+      setActiveTab("profile");
+    }
+  }, [activeTab, isFreelancer]);
+
+  const handleAddProject = () => {
+    if (!projectInput.trim()) return;
+    setProjects((prev) => [...prev, projectInput.trim()]);
+    setProjectInput("");
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleImageFile(file);
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Upload valid image");
+      return;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, profilePictureUrl: previewUrl }));
+    toast.info("Press 'Update profile' to save your new photo.");
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleImageFile(file);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!formData.fullName.trim()) {
-      showToast("Full name is required.", "error");
+      toast.error("Full name required");
       return;
     }
 
     setLoading(true);
     try {
       const token = getCookie("token");
-
       if (!token) {
-        showToast("Please login first.", "error");
-        setLoading(false);
+        toast.error("Login first");
         return;
       }
 
-      const response = await fetch(
-        "http://proafree.runasp.net/api/User/update-profile",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            fullName: formData.fullName,
-            phoneNumber: formData.phoneNumber,
-            bio: formData.bio,
-            profilePictureUrl: formData.profilePictureUrl,
-          }),
-        }
-      );
+      const form = new FormData();
+      form.append("FullName", formData.fullName);
+      form.append("PhoneNumber", formData.phoneNumber);
+      form.append("Bio", formData.bio);
+      form.append("Address", address);
 
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(result?.message || `Failed to update profile. (${response.status})`);
+      if (isFreelancer) {
+        form.append("JobTitle", jobTitle);
+        form.append("PortfolioUrl", mainLink);
+      }
+      if (fileInputRef.current?.files?.[0]) {
+        form.append("ProfilePicture", fileInputRef.current.files[0]);
+      }
+      if (isFreelancer && cvFileRef.current?.files?.[0]) {
+        form.append("cvFile", cvFileRef.current.files[0]);
+      }
+      if (isFreelancer) {
+        skills.forEach((skill) => form.append("Skills", skill));
+        projects.forEach((project) => form.append("Projects", project));
       }
 
-      updateUser({
-        fullName: result?.fullName ?? formData.fullName,
-        profilePictureUrl:
-          result?.profilePictureUrl ?? (formData.profilePictureUrl || user?.profilePictureUrl || null),
+      const response = await fetch(`${API_BASE_URL}/api/User/update-profile`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
       });
 
-      showToast("Profile updated successfully!", "success");
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Something went wrong.";
-      showToast(message, "error");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result?.message || "Update failed");
+
+      const newPhotoUrl = normalizeImageUrl(result?.profilePictureUrl || user?.profilePictureUrl);
+      updateUser({
+        fullName: formData.fullName,
+        profilePictureUrl: newPhotoUrl,
+      });
+
+      if (isFreelancer) {
+        await fetchFreelancerSkills();
+      }
+      toast.success("Profile updated successfully");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Error";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
+  const getImageSrc = (img?: string) => {
+    if (!img) return "/default.png";
+    if (img.startsWith("data:image")) return img;
+    if (img.startsWith("http")) return img;
+    return `${API_BASE_URL}${img}`;
+  };
+
+  const navItems = [
+    { key: "profile" as SettingsTab, label: "Public Profile", icon: User },
+    { key: "account" as SettingsTab, label: "Account", icon: Mail },
+    ...(isFreelancer
+      ? [{ key: "professional" as SettingsTab, label: "Professional Info", icon: Briefcase }]
+      : []),
+    ...(isFreelancer ? [{ key: "portfolio" as SettingsTab, label: "Portfolio", icon: Link }] : []),
+  ];
+
   return (
-    <div className="settings-root">
-      {/* Toast */}
-      {toast && (
-        <div className={`toast toast-${toast.type}`}>
-          <span className="toast-icon">
-            {toast.type === "success" ? "✓" : "✕"}
-          </span>
-          {toast.message}
-        </div>
-      )}
+    <div className="min-h-screen bg-background">
+      <SettingsPageHeader isClient={isClient} profileProgress={profileProgress} />
 
-      <div className="settings-container">
-        {/* Header */}
-        <div className="settings-header">
-          <div className="settings-header-left">
-            <h1 className="settings-title">Account Settings</h1>
-            <p className="settings-subtitle">
-              Manage your public profile and personal details
-            </p>
-          </div>
-          <div className="settings-header-badge">Profile</div>
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <div className="flex gap-8">
+          <SettingsSidebar items={navItems} activeTab={activeTab} onChangeTab={setActiveTab} />
 
-        <div className="settings-body">
-          {/* Avatar Section */}
-          <div className="avatar-section">
-            <div className="avatar-label">Profile Photo</div>
-            <div
-              className={`avatar-upload-zone ${isDragging ? "dragging" : ""}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {avatarPreview ? (
-                <Image
-                  src={avatarPreview}
-                  alt="Avatar preview"
-                  className="avatar-preview-img"
-                  width={120}
-                  height={120}
-                  unoptimized
-                />
-              ) : (
-                <div className="avatar-placeholder">
-                  <div className="avatar-placeholder-icon">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  </div>
-                  <span className="avatar-placeholder-text">
-                    Drop photo here or{" "}
-                    <span className="avatar-placeholder-link">browse</span>
-                  </span>
-                  <span className="avatar-placeholder-hint">
-                    PNG, JPG up to 5MB
-                  </span>
-                </div>
-              )}
-              <div className="avatar-overlay">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
-                  width="22"
-                  height="22"
-                >
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-                <span>Change photo</span>
-              </div>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileInput}
-              style={{ display: "none" }}
-            />
-          </div>
+          <main className="min-w-0 flex-1">
+            {activeTab === "profile" && (
+              <PublicProfileSection
+                formData={formData}
+                address={address}
+                loading={loading}
+                fileInputRef={fileInputRef}
+                onSubmit={handleSubmit}
+                onFormChange={handleChange}
+                onAddressChange={setAddress}
+                onFileInput={handleFileInput}
+                getImageSrc={getImageSrc}
+              />
+            )}
 
-          {/* Divider */}
-          <div className="divider" />
+            {activeTab === "account" && <AccountSection email={email} userRole={userRole} />}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="settings-form">
-            <div className="form-grid">
-              {/* Full Name */}
-              <div className="form-group">
-                <label className="form-label">
-                  Full Name <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <span className="input-icon">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                    >
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  </span>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    placeholder="e.g. Abdelrahman Ashour"
-                    className="form-input"
-                    required
-                  />
-                </div>
-              </div>
+            {isFreelancer && activeTab === "professional" && (
+              <ProfessionalInfoSection
+                jobTitle={jobTitle}
+                payPalEmail={payPalEmail}
+                cvFile={cvFile}
+                skills={skills}
+                skillName={skillName}
+                skillCategory={skillCategory}
+                skillRelevanceScore={skillRelevanceScore}
+                skillLoading={skillLoading}
+                loading={loading}
+                cvFileRef={cvFileRef}
+                onJobTitleChange={setJobTitle}
+                onPayPalEmailChange={setPayPalEmail}
+                onSkillNameChange={setSkillName}
+                onSkillCategoryChange={setSkillCategory}
+                onSkillRelevanceScoreChange={setSkillRelevanceScore}
+                onAddSkill={handleAddSkill}
+                onRemoveSkill={(index) => setSkills((prev) => prev.filter((_, idx) => idx !== index))}
+                onSave={handleSubmit}
+                onCvSelect={(fileName) => toast.info(`CV "${fileName}" selected. Press Save to upload.`)}
+              />
+            )}
 
-              {/* Phone Number */}
-              <div className="form-group">
-                <label className="form-label">Phone Number</label>
-                <div className="input-wrapper">
-                  <span className="input-icon">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                    >
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.61a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                    </svg>
-                  </span>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    placeholder="+1 (555) 000-0000"
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
-              {/* Profile Picture URL */}
-              <div className="form-group form-group-full">
-                <label className="form-label">Profile Picture URL</label>
-                <div className="input-wrapper">
-                  <span className="input-icon">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                    >
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                  </span>
-                  <input
-                    type="url"
-                    name="profilePictureUrl"
-                    value={formData.profilePictureUrl}
-                    onChange={handleChange}
-                    placeholder="https://example.com/your-photo.jpg"
-                    className="form-input"
-                  />
-                </div>
-                <p className="form-hint">
-                  Or upload a photo above — the URL will be filled automatically
-                </p>
-              </div>
-
-              {/* Bio */}
-              <div className="form-group form-group-full">
-                <label className="form-label">Bio</label>
-                <div className="textarea-wrapper">
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    placeholder="Tell us about yourself or your company..."
-                    className="form-textarea"
-                    rows={4}
-                    maxLength={500}
-                  />
-                  <span className="char-count">
-                    {formData.bio.length}/500
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="form-actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => {
-                  setFormData({
-                    fullName: "",
-                    phoneNumber: "",
-                    bio: "",
-                    profilePictureUrl: "",
-                  });
-                  setAvatarPreview("");
-                }}
-              >
-                Reset
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="btn-loading">
-                    <span className="spinner" />
-                    Saving...
-                  </span>
-                ) : (
-                  <>
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      width="16"
-                      height="16"
-                    >
-                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    Save Changes
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+            {isFreelancer && activeTab === "portfolio" && (
+              <PortfolioSection
+                mainLink={mainLink}
+                projects={projects}
+                projectInput={projectInput}
+                loading={loading}
+                onMainLinkChange={setMainLink}
+                onProjectInputChange={setProjectInput}
+                onAddProject={handleAddProject}
+                onRemoveProject={(index) => setProjects((prev) => prev.filter((_, idx) => idx !== index))}
+                onSave={handleSubmit}
+              />
+            )}
+          </main>
         </div>
       </div>
-
-      <style jsx>{`
-        .settings-root {
-          min-height: 100vh;
-          background: #f5f5f7;
-          padding: 40px 20px;
-          font-family: -apple-system, "SF Pro Display", "Segoe UI", sans-serif;
-        }
-
-        /* Toast */
-        .toast {
-          position: fixed;
-          top: 24px;
-          right: 24px;
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 14px 20px;
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 500;
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-          animation: slideIn 0.3s ease;
-          max-width: 340px;
-        }
-        .toast-success {
-          background: #1c1c1e;
-          color: #fff;
-        }
-        .toast-error {
-          background: #ff3b30;
-          color: #fff;
-        }
-        .toast-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          font-size: 11px;
-          font-weight: 700;
-          flex-shrink: 0;
-          background: rgba(255, 255, 255, 0.2);
-        }
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        /* Container */
-        .settings-container {
-          max-width: 720px;
-          margin: 0 auto;
-          background: #fff;
-          border-radius: 20px;
-          box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
-          overflow: hidden;
-        }
-
-        /* Header */
-        .settings-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 32px 40px 28px;
-          border-bottom: 1px solid #f0f0f0;
-          background: #fff;
-        }
-        .settings-title {
-          font-size: 22px;
-          font-weight: 700;
-          color: #1c1c1e;
-          margin: 0 0 4px;
-          letter-spacing: -0.4px;
-        }
-        .settings-subtitle {
-          font-size: 14px;
-          color: #8e8e93;
-          margin: 0;
-        }
-        .settings-header-badge {
-          background: #eef2ff;
-          color: #4f6ef7;
-          font-size: 12px;
-          font-weight: 600;
-          padding: 6px 14px;
-          border-radius: 20px;
-          letter-spacing: 0.2px;
-        }
-
-        /* Body */
-        .settings-body {
-          padding: 36px 40px 40px;
-        }
-
-        /* Avatar */
-        .avatar-section {
-          margin-bottom: 32px;
-        }
-        .avatar-label {
-          font-size: 13px;
-          font-weight: 600;
-          color: #1c1c1e;
-          margin-bottom: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.6px;
-        }
-        .avatar-upload-zone {
-          position: relative;
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          border: 2px dashed #d1d1d6;
-          cursor: pointer;
-          overflow: hidden;
-          transition: border-color 0.2s, transform 0.2s;
-          background: #f8f8fa;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .avatar-upload-zone:hover {
-          border-color: #4f6ef7;
-          transform: scale(1.02);
-        }
-        .avatar-upload-zone.dragging {
-          border-color: #4f6ef7;
-          background: #eef2ff;
-        }
-        .avatar-preview-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        .avatar-placeholder {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          padding: 12px;
-          text-align: center;
-        }
-        .avatar-placeholder-icon {
-          color: #c7c7cc;
-          width: 32px;
-          height: 32px;
-          margin-bottom: 4px;
-        }
-        .avatar-placeholder-icon svg {
-          width: 100%;
-          height: 100%;
-        }
-        .avatar-placeholder-text {
-          font-size: 10px;
-          color: #8e8e93;
-          line-height: 1.4;
-        }
-        .avatar-placeholder-link {
-          color: #4f6ef7;
-          font-weight: 600;
-        }
-        .avatar-placeholder-hint {
-          font-size: 9px;
-          color: #c7c7cc;
-        }
-        .avatar-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          opacity: 0;
-          transition: opacity 0.2s;
-          color: white;
-          font-size: 10px;
-          font-weight: 600;
-        }
-        .avatar-upload-zone:hover .avatar-overlay {
-          opacity: 1;
-        }
-
-        .divider {
-          height: 1px;
-          background: #f0f0f0;
-          margin-bottom: 32px;
-        }
-
-        /* Form */
-        .settings-form {
-          display: flex;
-          flex-direction: column;
-          gap: 0;
-        }
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 22px;
-          margin-bottom: 32px;
-        }
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .form-group-full {
-          grid-column: 1 / -1;
-        }
-        .form-label {
-          font-size: 13px;
-          font-weight: 600;
-          color: #1c1c1e;
-          letter-spacing: 0.1px;
-        }
-        .required {
-          color: #ff3b30;
-        }
-        .input-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-        .input-icon {
-          position: absolute;
-          left: 14px;
-          color: #c7c7cc;
-          width: 16px;
-          height: 16px;
-          display: flex;
-          align-items: center;
-          pointer-events: none;
-          flex-shrink: 0;
-        }
-        .input-icon svg {
-          width: 100%;
-          height: 100%;
-        }
-        .form-input {
-          width: 100%;
-          padding: 12px 14px 12px 42px;
-          border: 1.5px solid #e5e5ea;
-          border-radius: 12px;
-          font-size: 14px;
-          color: #1c1c1e;
-          background: #fafafa;
-          transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-          outline: none;
-          box-sizing: border-box;
-        }
-        .form-input::placeholder {
-          color: #c7c7cc;
-        }
-        .form-input:focus {
-          border-color: #4f6ef7;
-          background: #fff;
-          box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.1);
-        }
-        .textarea-wrapper {
-          position: relative;
-        }
-        .form-textarea {
-          width: 100%;
-          padding: 12px 16px;
-          border: 1.5px solid #e5e5ea;
-          border-radius: 12px;
-          font-size: 14px;
-          color: #1c1c1e;
-          background: #fafafa;
-          transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-          outline: none;
-          resize: vertical;
-          min-height: 100px;
-          font-family: inherit;
-          line-height: 1.6;
-          box-sizing: border-box;
-        }
-        .form-textarea::placeholder {
-          color: #c7c7cc;
-        }
-        .form-textarea:focus {
-          border-color: #4f6ef7;
-          background: #fff;
-          box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.1);
-        }
-        .char-count {
-          position: absolute;
-          bottom: 10px;
-          right: 14px;
-          font-size: 11px;
-          color: #c7c7cc;
-          pointer-events: none;
-        }
-        .form-hint {
-          font-size: 12px;
-          color: #aeaeb2;
-          margin: 0;
-          line-height: 1.5;
-        }
-
-        /* Actions */
-        .form-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-        }
-        .btn-secondary {
-          padding: 12px 24px;
-          border-radius: 12px;
-          border: 1.5px solid #e5e5ea;
-          background: #fff;
-          color: #636366;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s, border-color 0.2s;
-          font-family: inherit;
-        }
-        .btn-secondary:hover {
-          background: #f5f5f7;
-          border-color: #d1d1d6;
-        }
-        .btn-primary {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 28px;
-          border-radius: 12px;
-          border: none;
-          background: #1c1c1e;
-          color: #fff;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s, transform 0.1s;
-          font-family: inherit;
-        }
-        .btn-primary:hover:not(:disabled) {
-          background: #3a3a3c;
-        }
-        .btn-primary:active:not(:disabled) {
-          transform: scale(0.98);
-        }
-        .btn-primary:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .btn-loading {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .spinner {
-          width: 14px;
-          height: 14px;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-          display: inline-block;
-        }
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @media (max-width: 600px) {
-          .settings-header {
-            padding: 24px 24px 20px;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-          }
-          .settings-body {
-            padding: 24px 24px 32px;
-          }
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-          .form-group-full {
-            grid-column: 1;
-          }
-          .form-actions {
-            flex-direction: column;
-          }
-          .btn-primary,
-          .btn-secondary {
-            width: 100%;
-            justify-content: center;
-          }
-        }
-      `}</style>
     </div>
   );
 }

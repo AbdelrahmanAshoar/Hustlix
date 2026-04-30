@@ -34,7 +34,6 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginDto) => {
     try {
       const res = await loginServices(data);
-      console.log('Login response:', res);
       
       // Store both token and user data
       login(res.token, res.user);

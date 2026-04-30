@@ -1,4 +1,5 @@
 // app/api/Freelancer/get-proposal-by-project/route.ts
+import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
     }
 
     const response = await fetch(
-      `http://proafree.runasp.net/api/Freelancer/get-proposal-by-project?projectId=${projectId}`,
+      `${API_BASE_URL}/api/Freelancer/get-proposal-by-project?projectId=${projectId}`,
       {
         method: "GET",
         headers: {

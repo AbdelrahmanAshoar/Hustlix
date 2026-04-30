@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";
 
 export async function PUT(req: Request) {
@@ -8,7 +9,7 @@ export async function PUT(req: Request) {
     const body = await req.json();
 
     const res = await fetch(
-      "http://proafree.runasp.net/api/Client/update-project",
+      `${API_BASE_URL}/api/Client/update-project`,
       {
         method: "PUT",
         headers: {

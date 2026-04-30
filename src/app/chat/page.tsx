@@ -1,6 +1,7 @@
 'use client';
 
 import ChatComponent from '@/components/chat/ChatComponent';
+import { API_BASE_URL } from '@/config';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function ChatPage() {
@@ -10,7 +11,7 @@ export default function ChatPage() {
     return <div>Please log in to access chat.</div>;
   }
 
-  const hubUrl = 'http://proafree.runasp.net/chatHub'; // Replace with actual hub URL
+  const hubUrl = `${API_BASE_URL}/chatHub`; // Replace with actual hub URL
 
   return (
     <div className="container mx-auto p-4">

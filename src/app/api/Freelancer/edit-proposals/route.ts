@@ -1,7 +1,7 @@
 // app/api/Freelancer/edit-proposal/route.ts
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-
+import { API_BASE_URL } from "@/config";
 export async function PUT(req: NextRequest) {
   try {
     const cookieStore = cookies();
@@ -17,7 +17,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
 
     const response = await fetch(
-      "http://proafree.runasp.net/api/Freelancer/edit-proposal",
+      `${API_BASE_URL}/api/Freelancer/edit-proposal`,
       {
         method: "PUT",
         headers: {

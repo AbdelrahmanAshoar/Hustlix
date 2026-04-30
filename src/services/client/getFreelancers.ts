@@ -86,7 +86,15 @@ export async function getFreelancers(
     const data = await res.json();
     
     // API returns array directly, wrap it in object with data property
-    return { data };
+    // Fix profile picture URLs to include full backend URL
+    const fixedData = data.map((freelancer: TalentProfile) => ({
+      ...freelancer,
+      profilePictureUrl: freelancer.profilePictureUrl 
+        ? `${API_BASE_URL}${freelancer.profilePictureUrl}` 
+        : null
+    }));
+    
+    return { data: fixedData };
   } catch (error) {
     console.error("❌ Error fetching freelancers:", error);
     throw error;
