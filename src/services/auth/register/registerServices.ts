@@ -17,9 +17,9 @@ export const registerServices = async (
 
     // Log the form data entries for debugging
     console.log("Sending FormData:");
-    for (let pair of formData.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
-    }
+    Array.from(formData.entries()).forEach(([key, value]) => {
+      console.log(`${key}: ${value}`);
+    });
 
     const res = await fetch(
       `${API_BASE_URL}/api/User/register`,
@@ -43,7 +43,7 @@ export const registerServices = async (
     }
 
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Registration API error:", error);
     throw error;
   }
