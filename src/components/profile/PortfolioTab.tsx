@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { API_BASE_URL } from "@/config";
 
 interface Project {
   title: string;
@@ -23,7 +24,7 @@ export default function PortfolioTab({ data }: PortfolioTabProps) {
   const getFullUrl = (path: string): string => {
     if (!path) return "/placeholder.png";
     if (path.startsWith("http")) return path;
-    return `http://proafree.runasp.net${path}`;
+    return `${API_BASE_URL}${path}`;
   };
 
   const renderPortfolioLink = () => {

@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE_URL } from "@/config";
 import type { ProfilePageData } from "./types";
 
 interface OverviewTabProps {
@@ -32,7 +33,7 @@ const Overview = ({ data }: OverviewTabProps) => {
             <p className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: "#94a3b8" }}>CV</p>
             {professionalInfo?.cvUrl ? (
               <a
-                href={`http://proafree.runasp.net${professionalInfo.cvUrl}`}
+                href={`${API_BASE_URL}${professionalInfo.cvUrl}`}
                 target="_blank"
                 className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg transition-all"
                 style={{ background: "#eff6ff", color: "#2563eb", border: "1px solid #dbeafe" }}

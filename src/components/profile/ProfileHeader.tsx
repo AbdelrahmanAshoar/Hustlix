@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, BriefcaseBusiness, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE_URL } from "@/config";
 import type { ProfilePageData } from "./types";
 
 interface ProfileHeaderProps {
@@ -15,7 +16,7 @@ export default function ProfileHeader({ data }: ProfileHeaderProps) {
   const getFullUrl = (path?: string) => {
     if (!path) return "/default.png";
     if (path.startsWith("data:image")) return path;
-    return `http://proafree.runasp.net${path}`;
+    return `${API_BASE_URL}${path}`;
   };
 
   const joinedDate = auth?.createdAt
