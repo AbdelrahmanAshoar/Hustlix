@@ -110,7 +110,7 @@ export function Navbar() {
                 {/* Role-based menu items */}
                 {userRole === 'Admin' && (
                   <DropdownMenuItem asChild>
-                    <Link href="/admin/dashboard" className="cursor-pointer flex items-center">
+                    <Link href="/dashboard/admin" className="cursor-pointer flex items-center">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       <span>Admin Dashboard</span>
                     </Link>

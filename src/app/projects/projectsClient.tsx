@@ -15,7 +15,7 @@ import { Search, X } from "lucide-react";
 import { ProjectData } from "../services/types/freelancer";
 import Link from "next/link";
 
-export default function projectsClient({ data }: { data: ProjectData[] }) {
+export default function ProjectsClient({ data }: { data: ProjectData[] }) {
   console.log("**************************Received projects data:", data);
   
   // Search state
@@ -28,16 +28,31 @@ export default function projectsClient({ data }: { data: ProjectData[] }) {
   const itemsPerPage = 5;
 
   // Get unique categories from projects for filter
-  const categories = [...new Set(data.map(project => {
-    if (project.requiredSkills) {
-      const skills = project.requiredSkills.split(',');
-      if (skills.some(s => s.toLowerCase().includes('web'))) return 'Web Development';
-      if (skills.some(s => s.toLowerCase().includes('mobile') || s.toLowerCase().includes('app'))) return 'Mobile Apps';
-      if (skills.some(s => s.toLowerCase().includes('ui') || s.toLowerCase().includes('ux') || s.toLowerCase().includes('design'))) return 'UX/UI Design';
-      if (skills.some(s => s.toLowerCase().includes('copy') || s.toLowerCase().includes('content'))) return 'Copywriting';
-    }
-    return 'Other';
-  }))];
+  const categories = Array.from(
+    data.reduce((set, project) => {
+      if (project.requiredSkills) {
+        const skills = project.requiredSkills.split(",");
+        if (skills.some((s) => s.toLowerCase().includes("web"))) {
+          set.add("Web Development");
+          return set;
+        }
+        if (skills.some((s) => s.toLowerCase().includes("mobile") || s.toLowerCase().includes("app"))) {
+          set.add("Mobile Apps");
+          return set;
+        }
+        if (skills.some((s) => s.toLowerCase().includes("ui") || s.toLowerCase().includes("ux") || s.toLowerCase().includes("design"))) {
+          set.add("UX/UI Design");
+          return set;
+        }
+        if (skills.some((s) => s.toLowerCase().includes("copy") || s.toLowerCase().includes("content"))) {
+          set.add("Copywriting");
+          return set;
+        }
+      }
+      set.add("Other");
+      return set;
+    }, new Set<string>())
+  );
 
   // Filter projects based on search and filters
   const filteredProjects = data.filter((project) => {
@@ -145,7 +160,7 @@ export default function projectsClient({ data }: { data: ProjectData[] }) {
 
   // Filter projects by budget type
   const budgetFilteredProjects = selectedBudgetType.length > 0
-    ? paginatedProjects.filter(project => {
+    ? paginatedProjects.filter(() => {
         // Assuming fixed price for now (you can adjust based on your data structure)
         return true;
       })
@@ -313,7 +328,7 @@ export default function projectsClient({ data }: { data: ProjectData[] }) {
                   <Search className="h-12 w-12 text-muted-foreground" />
                   <h3 className="text-xl font-semibold">No projects found</h3>
                   <p className="text-muted-foreground">
-                    Try adjusting your search or filters to find what you're looking for.
+                    Try adjusting your search or filters to find what you are looking for.
                   </p>
                   <Button onClick={clearFilters} variant="outline">
                     Clear all filters
