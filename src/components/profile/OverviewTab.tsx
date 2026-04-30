@@ -1,6 +1,11 @@
 import { useAuth } from "@/contexts/AuthContext";
+import type { ProfilePageData } from "./types";
 
-const Overview = ({ data }) => {
+interface OverviewTabProps {
+  data: ProfilePageData;
+}
+
+const Overview = ({ data }: OverviewTabProps) => {
   const { userRole } = useAuth();
   const { professionalInfo } = data;
 
