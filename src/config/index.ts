@@ -5,10 +5,6 @@ function normalizeApiBaseUrl(url: string): string {
 
   try {
     const parsed = new URL(url);
-    const isLocalHost = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
-    if (parsed.protocol === "http:" && !isLocalHost) {
-      parsed.protocol = "https:";
-    }
     return parsed.toString().replace(/\/$/, "");
   } catch {
     return url;
