@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/Freelancer/edit-proposal/route.ts
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";

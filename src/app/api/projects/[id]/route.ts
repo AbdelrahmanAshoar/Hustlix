@@ -2,14 +2,14 @@ export const dynamic = "force-dynamic";
 
 import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get("token")?.value;
+    const token = cookies().get("token")?.value;
 
     const res = await fetch(
       `${API_BASE_URL}/api/Freelancer/GetProject/${params.id}`,
@@ -22,13 +22,15 @@ export async function GET(
       }
     );
 
-    const data = await res.json().catch(() => null);
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
 
-    return Response.json(data, { status: res.status });
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: err.message || "Server error" },
       { status: 500 }
     );
   }
 }
+

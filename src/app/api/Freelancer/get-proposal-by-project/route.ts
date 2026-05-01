@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/Freelancer/get-proposal-by-project/route.ts
 import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";

@@ -6,7 +6,7 @@ export const getProjectProposals = async (
   projectId: number
 ): Promise<Proposal[]> => {
   const res = await fetch(
-    `/api/client/project-proposals?ProjectId=${projectId}`,
+    `/api/project-proposals?ProjectId=${projectId}`,
     {
       cache: "no-store",
     }

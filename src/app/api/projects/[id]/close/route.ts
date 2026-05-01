@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { API_BASE_URL } from "@/config"
 import { cookies } from "next/headers"
 export async function PUT(
@@ -10,7 +12,7 @@ export async function PUT(
   const res = await fetch(
     `${API_BASE_URL}/api/Client/close-project/${params.id}`,
     {
-      method: "PUT",
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -27,9 +29,24 @@ export async function PUT(
     )
   }
 
+  let data = null
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    data = text
+  }
+
   return Response.json({
     success: true,
     message: "Project closed",
-    data: text ? JSON.parse(text) : null,
+    data,
   })
 }
+
+export async function POST(
+  req: Request,
+  context: { params: { id: string } }
+) {
+  return PUT(req, context)
+}
+

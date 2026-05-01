@@ -48,16 +48,43 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
     milestones: [] as EditMilestoneDto[],
   });
 
+  const getProjectState = (status?: string) =>
+    (status || "Open").toLowerCase().replace(/\s+/g, "_");
+
+  const isOpenProject = (status?: string) => getProjectState(status) === "open";
+
+  const getStatusBadgeClass = (status?: string) => {
+    const state = getProjectState(status);
+
+    if (state.includes("complete") || state.includes("closed")) {
+      return "text-green-700 border-green-200 bg-green-50";
+    }
+
+    if (state.includes("progress") || state.includes("award")) {
+      return "text-blue-700 border-blue-200 bg-blue-50";
+    }
+
+    if (state.includes("cancel")) {
+      return "text-red-700 border-red-200 bg-red-50";
+    }
+
+    return "text-emerald-700 border-emerald-200 bg-emerald-50";
+  };
+
   // ===== Dynamic Stats =====
   const totalSpend = projects?.reduce((acc, p) => acc + (p.budget || 0), 0);
-  const activeJobs = projects?.filter((p) => p.status === "Open").length;
-  const totalProposals = projects?.reduce(
-    (acc, p) => acc + (p.proposalsCount || 0),
-    0,
-  );
+  const activeJobs = projects?.filter((p) => isOpenProject(p.status)).length;
   const hiredTalent = projects?.filter(
     (p) => p.selectedFreelancer !== null,
   ).length;
+  const inProgressJobs = projects?.filter((p) => {
+    const state = getProjectState(p.status);
+    return state.includes("progress") || state.includes("award");
+  }).length;
+  const completedJobs = projects?.filter((p) => {
+    const state = getProjectState(p.status);
+    return state.includes("complete") || state.includes("closed");
+  }).length;
 
   // Open edit dialog with project data
   // Open edit dialog with project data
@@ -216,29 +243,31 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeJobs || 0}</div>
-            <p className="text-xs text-muted-foreground">All on track</p>
+            <p className="text-xs text-muted-foreground">Open for proposals</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">New Proposals</CardTitle>
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProposals || 0}</div>
-            <p className="text-xs text-muted-foreground">Across projects</p>
+            <div className="text-2xl font-bold">{inProgressJobs || 0}</div>
+            <p className="text-xs text-muted-foreground">Awarded or active</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Hired Talent</CardTitle>
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{hiredTalent || 0}</div>
-            <p className="text-xs text-muted-foreground">Active contractors</p>
+            <div className="text-2xl font-bold">
+              {completedJobs || hiredTalent || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Closed lifecycle</p>
           </CardContent>
         </Card>
       </div>
@@ -432,14 +461,18 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
 
                         <Badge
                           variant="outline"
-                          className={
-                            project.status === "Open"
-                              ? "text-emerald-600 border-emerald-200 bg-emerald-50"
-                              : "text-gray-600 border-gray-200 bg-gray-50"
-                          }
+                          className={getStatusBadgeClass(project.status)}
                         >
                           {project.status}
                         </Badge>
+                        {project.selectedFreelancer && (
+                          <Badge variant="outline">Freelancer selected</Badge>
+                        )}
+                        {(project.workDeliveriesCount || 0) > 0 && (
+                          <Badge variant="secondary">
+                            {project.workDeliveriesCount} deliveries
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
@@ -453,7 +486,7 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
                       </Link>
                       <Button
                         variant="ghost"
-                        disabled={project.status === "Closed" || isLoading}
+                        disabled={!isOpenProject(project.status) || isLoading}
                         onClick={() => openEditDialog(project)}
                         size="sm"
                         className="text-primary hover:bg-primary/10"
@@ -462,7 +495,7 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
                       </Button>
                       <Button
                         variant="ghost"
-                        disabled={project.status === "Closed" || isLoading}
+                        disabled={!isOpenProject(project.status) || isLoading}
                         onClick={async () => {
                           if (
                             confirm(

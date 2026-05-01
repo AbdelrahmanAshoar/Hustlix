@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { API_BASE_URL } from "@/config"
 import { cookies } from "next/headers"
 

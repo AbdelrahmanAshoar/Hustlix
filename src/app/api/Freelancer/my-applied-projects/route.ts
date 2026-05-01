@@ -8,16 +8,10 @@ export async function GET() {
   try {
     const token = cookies().get("token")?.value;
 
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized - No token found" },
-        { status: 401 }
-      );
-    }
-
-    const res = await fetch(`${API_BASE_URL}/api/Freelancer/my-skills`, {
+    const res = await fetch(`${API_BASE_URL}/api/Freelancer/my-applied-projects`, {
       method: "GET",
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       cache: "no-store",
@@ -33,9 +27,9 @@ export async function GET() {
     }
 
     return NextResponse.json(data, { status: res.status });
-  } catch {
+  } catch (err: any) {
     return NextResponse.json(
-      { success: false, message: "Internal server error" },
+      { success: false, message: err.message || "Server error" },
       { status: 500 }
     );
   }

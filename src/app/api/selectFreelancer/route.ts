@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";
 
@@ -38,12 +40,15 @@ export async function POST(req: Request) {
       data = { message: text };
     }
 
-if (!res.ok) {
-  return Response.json({
-    success: false,
-    message: data?.message || "Failed",
-  });
-}
+    if (!res.ok) {
+      return Response.json(
+        {
+          success: false,
+          message: data?.message || "Failed",
+        },
+        { status: res.status }
+      );
+    }
 
     return Response.json(data);
   } catch (error) {
@@ -55,3 +60,4 @@ if (!res.ok) {
     );
   }
 }
+

@@ -4,24 +4,23 @@ import { API_BASE_URL } from "@/config";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(
+  req: Request,
+  { params }: { params: { projectId: string } }
+) {
   try {
     const token = cookies().get("token")?.value;
 
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized - No token found" },
-        { status: 401 }
-      );
-    }
-
-    const res = await fetch(`${API_BASE_URL}/api/Freelancer/my-skills`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
+    const res = await fetch(
+      `${API_BASE_URL}/api/User/conversation/${params.projectId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      }
+    );
 
     const text = await res.text();
     let data: unknown = [];
@@ -29,13 +28,13 @@ export async function GET() {
     try {
       data = text ? JSON.parse(text) : [];
     } catch {
-      data = [];
+      data = { message: text };
     }
 
     return NextResponse.json(data, { status: res.status });
-  } catch {
+  } catch (err: any) {
     return NextResponse.json(
-      { success: false, message: "Internal server error" },
+      { success: false, message: err.message || "Server error" },
       { status: 500 }
     );
   }
