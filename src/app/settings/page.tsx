@@ -307,6 +307,7 @@ export default function SettingsPage() {
 
   const getImageSrc = (img?: string) => {
     if (!img) return "/default.png";
+    if (img.startsWith("blob:")) return img; 
     if (img.startsWith("data:image")) return img;
     if (img.startsWith("http")) return img;
     return `${API_BASE_URL}${img}`;
