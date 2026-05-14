@@ -19,12 +19,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen flex flex-col`}>
+      <body className={`${inter.className} min-h-screen flex flex-col overflow-x-hidden`}>
         <AuthProvider>
-        <Navbar />
-        <main className="flex-1">{children}</main>
-         <Toaster />
-        <Footer />
+          <Navbar />
+          <main className="flex-1 overflow-hidden">{children}</main>
+          <Toaster />
+          <Footer />
         </AuthProvider>
       </body>
     </html>

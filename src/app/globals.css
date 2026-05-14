@@ -75,3 +75,104 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Scrollbar Styles */
+@layer utilities {
+  /* Modern scrollbar for Chrome, Edge, Safari */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: #64748b;
+  }
+
+  /* Custom scrollbar utility classes */
+  .custom-scrollbar {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Tailwind-style scrollbar classes */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  .scrollbar-thumb-slate-200::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+  }
+
+  .scrollbar-thumb-slate-200::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+  }
+
+  /* Firefox scrollbar styling */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .custom-scrollbar {
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .custom-scrollbar:hover {
+    scrollbar-color: #94a3b8 transparent;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .scrollbar-thumb-slate-200 {
+    scrollbar-color: #e2e8f0 transparent;
+  }
+}
+
+

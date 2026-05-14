@@ -37,7 +37,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 md:grid md:grid-cols-[16rem_minmax(0,1fr)]">
+    <div className="min-h-screen bg-muted/20 md:grid md:grid-cols-[16rem_minmax(0,1fr)] md:overflow-hidden">
       <DashboardSidebar
         user={user}
         userRole={userRole}
@@ -46,7 +46,7 @@ export default function DashboardLayout({
       />
 
       {/* Main Content Area */}
-      <main className="min-w-0">
+      <main className="min-w-0 overflow-y-auto">
         <DashboardMobileHeader userRole={userRole} />
 
         <div className="p-6 md:p-10">

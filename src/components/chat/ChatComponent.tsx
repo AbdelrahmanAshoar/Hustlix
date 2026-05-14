@@ -1,135 +1,134 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import * as signalR from '@microsoft/signalr';
+import { API_BASE_URL } from '@/config';
+import Chatside from './ChatSide';
+import ChatArea from './ChatArea';
 
-interface Message {
-  id: string;
-  senderId: string;
-  content: string;
-  timestamp: Date;
-  attachment?: string;
-  seen: boolean;
-}
+// Helper لقراءة الكوكيز وفك التوكن
+const getCookie = (name: string) => {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift();
+  return null;
+};
 
-interface ChatComponentProps {
-  userId: string;
-  hubUrl: string;
-}
+const getUserIdFromToken = (token: string) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.Id || payload.sub || payload.nameid;
+  } catch (e) { return null; }
+};
 
-export default function ChatComponent({ userId, hubUrl }: ChatComponentProps) {
-  const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [messageInput, setMessageInput] = useState('');
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+export default function ChatComponent() {
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [connection, setConnection] = useState<any>(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConv, setSelectedConv] = useState<any>(null);
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
+
+  // جلب البيانات الحقيقية من التوكن الموجود في الكوكي
+  useEffect(() => {
+    const token = getCookie('token'); 
+    if (token) {
+      setAuthToken(token);
+      setCurrentUserId(getUserIdFromToken(token));
+    }
+  }, []);
+
+  const apiCall = useCallback(async (method: string, url: string, body?: any) => {
+    if (!authToken) return;
+    const res = await fetch(`${API_BASE_URL}${url}`, {
+      method,
+      headers: { 
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    return res.json();
+  }, [authToken]);
+
+  const loadConvs = useCallback(async () => {
+    const data = await apiCall('GET', '/api/User/my-conversations');
+    if (data) setConversations(data);
+  }, [apiCall]);
 
   useEffect(() => {
+    if (!authToken) return;
+
     const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl)
+      .withUrl(`${API_BASE_URL}/chatHub?access_token=${encodeURIComponent(authToken)}`, {
+        transport: signalR.HttpTransportType.LongPolling
+      })
       .withAutomaticReconnect()
       .build();
 
-    setConnection(newConnection);
-
-    newConnection.on('ReceiveMessage', (message: Message) => {
-      setMessages(prev => [...prev, message]);
+    newConnection.on("ReceiveMessage", (msg) => {
+      setSelectedConv((prev: any) => {
+        if (prev && String(prev.otherUser.id) === String(msg.senderId)) {
+          setMessages((msgs: any) => [...msgs, msg]);
+        }
+        return prev;
+      });
+      loadConvs();
     });
 
-    newConnection.on('MessageSeen', (messageId: string) => {
-      setMessages(prev => prev.map(msg =>
-        msg.id === messageId ? { ...msg, seen: true } : msg
-      ));
+    newConnection.on("MessageSent", (msg) => {
+      setSelectedConv((prev: any) => {
+        if (prev && String(prev.otherUser.id) === String(msg.receiverId)) {
+          setMessages((msgs: any) => [...msgs, msg]);
+        }
+        return prev;
+      });
+      loadConvs();
     });
 
     newConnection.start()
       .then(() => {
-        setIsConnected(true);
-        console.log('Connected to chat hub');
+        setIsOnline(true);
+        loadConvs();
       })
-      .catch(err => console.error('Connection failed: ', err));
+      .catch(err => console.error("SignalR Error: ", err));
 
-    return () => {
-      newConnection.stop();
-    };
-  }, [hubUrl]);
+    setConnection(newConnection);
+    return () => { newConnection.stop(); };
+  }, [authToken, loadConvs]);
 
-  const sendMessage = async () => {
-    if (connection && messageInput.trim()) {
-      try {
-        await connection.invoke('SendMessage', userId, messageInput, attachment?.name);
-        setMessageInput('');
-        setAttachment(null);
-      } catch (err) {
-        console.error('Send message failed: ', err);
-      }
-    }
+  const handleOpenConv = async (conv: any) => {
+    setSelectedConv(conv);
+    const data = await apiCall('GET', `/api/User/conversation-with/${conv.otherUser.id}`);
+    if (data) setMessages(data);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachment(e.target.files[0]);
-    }
+  const handleSend = async () => {
+    if (!connection || !inputText.trim() || !selectedConv) return;
+    try {
+      await connection.invoke("SendMessage", selectedConv.otherUser.id, inputText, null);
+      setInputText('');
+    } catch (e) { console.error("Send Error", e); }
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Chat</h2>
-
-      <div className="mb-4">
-        <span className={`font-bold ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
-          {isConnected ? 'Connected' : 'Disconnected'}
-        </span>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-        <textarea
-          value={messageInput}
-          onChange={(e) => setMessageInput(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md resize-vertical"
-          rows={3}
-        />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Attachment</label>
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
-        />
-      </div>
-
-      <button
-        onClick={sendMessage}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
-        disabled={!isConnected}
-      >
-        Send Message
-      </button>
-
-      <div className="mt-6">
-        <h3 className="text-lg font-semibold mb-2">Messages</h3>
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {messages.map((msg) => (
-            <div key={msg.id} className="p-3 border-b border-gray-200 flex items-start gap-3">
-              <div className="flex-1">
-                <div className="font-medium text-sm text-gray-600">{msg.senderId}</div>
-                <div className="text-gray-800">{msg.content}</div>
-                {msg.attachment && (
-                  <a href={msg.attachment} className="text-orange-600 text-sm underline ml-2">
-                    Attachment
-                  </a>
-                )}
-                <div className="text-xs text-gray-500 mt-1">
-                  {new Date(msg.timestamp).toLocaleString()} {msg.seen && '✓'}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] h-[calc(100vh-120px)] min-h-[500px] shadow-2xl rounded-3xl overflow-hidden border border-slate-200 bg-white">
+      <Chatside 
+        conversations={conversations} 
+        selectedId={selectedConv?.otherUser.id}
+        onSelect={handleOpenConv}
+        isOnline={isOnline}
+      />
+      <ChatArea 
+        selectedConv={selectedConv}
+        messages={messages}
+        currentUserId={currentUserId}
+        onSendMessage={handleSend}
+        inputText={inputText}
+        setInputText={setInputText}
+      />
     </div>
   );
 }
