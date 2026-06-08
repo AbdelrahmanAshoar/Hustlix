@@ -546,7 +546,7 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
                 Start conversations with freelancers on your projects.
               </p>
 
-              <Link href="/chat">
+              <Link href="/dashboard/messages">
                 <Button className="w-full">Open Chat</Button>
               </Link>
             </CardContent>

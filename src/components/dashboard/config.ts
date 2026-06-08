@@ -34,11 +34,7 @@ export const COMMON_NAV_ITEMS: NavItem[] = [
     icon: MessageSquare,
     badge: '3',
   },
-  {
-    name: 'Notifications',
-    href: '/dashboard/notifications',
-    icon: Bell,
-  },
+  
   {
     name: 'Settings',
     href: '/settings',

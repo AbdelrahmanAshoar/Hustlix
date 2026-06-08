@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Briefcase, Link, Mail, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_BASE_URL } from "@/config";
+import { normalizeImageUrl } from "@/lib/imageUrl";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import SettingsSidebar from "@/components/settings/SettingsSidebar";
 import PublicProfileSection from "@/components/settings/PublicProfileSection";
@@ -19,13 +20,6 @@ function getCookie(name: string) {
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
   return null;
-}
-
-function normalizeImageUrl(url?: string | null) {
-  if (!url) return "/default.png";
-  if (url.startsWith("data:image")) return url;
-  if (url.startsWith("http")) return url;
-  return `${API_BASE_URL}${url}`;
 }
 
 export default function SettingsPage() {
@@ -305,14 +299,6 @@ export default function SettingsPage() {
     }
   };
 
-  const getImageSrc = (img?: string) => {
-    if (!img) return "/default.png";
-    if (img.startsWith("blob:")) return img; 
-    if (img.startsWith("data:image")) return img;
-    if (img.startsWith("http")) return img;
-    return `${API_BASE_URL}${img}`;
-  };
-
   const navItems = [
     { key: "profile" as SettingsTab, label: "Public Profile", icon: User },
     { key: "account" as SettingsTab, label: "Account", icon: Mail },
@@ -341,7 +327,7 @@ export default function SettingsPage() {
                 onFormChange={handleChange}
                 onAddressChange={setAddress}
                 onFileInput={handleFileInput}
-                getImageSrc={getImageSrc}
+                getImageSrc={normalizeImageUrl}
               />
             )}
 

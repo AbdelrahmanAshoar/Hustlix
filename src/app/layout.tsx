@@ -22,9 +22,11 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen flex flex-col overflow-x-hidden`}>
         <AuthProvider>
           <Navbar />
-          <main className="flex-1 overflow-hidden">{children}</main>
-          <Toaster />
-          <Footer />
+          <main className="flex-1 flex flex-col overflow-hidden">
+            {children}
+            <Toaster />
+            <Footer />
+          </main>
         </AuthProvider>
       </body>
     </html>

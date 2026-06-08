@@ -7,6 +7,7 @@ export type FreelancerSkill = {
 
 export type TalentProfile = {
   id: number;
+  userId?: number;
   fullName: string;
   email: string;
   profilePictureUrl: string | null;

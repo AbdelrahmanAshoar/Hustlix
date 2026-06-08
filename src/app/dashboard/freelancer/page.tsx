@@ -108,7 +108,7 @@ export default function FreelancerDashboard() {
             Start conversations with clients on your projects.
           </p>
 
-          <Link href="/chat">
+          <Link href="/dashboard/messages">
             <Button className="w-full">
               Open Chat
             </Button>

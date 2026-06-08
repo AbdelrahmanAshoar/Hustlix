@@ -54,7 +54,7 @@ export function Navbar() {
               </>
             )}
             <Link href="/why-hustlix" className="hover:text-foreground transition-colors">Why Hustlix</Link>
-            <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+            {/* <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link> */}
           </div>
         </div>
 

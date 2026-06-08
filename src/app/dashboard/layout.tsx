@@ -37,7 +37,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 md:grid md:grid-cols-[16rem_minmax(0,1fr)] md:overflow-hidden">
+    <div className="flex-1 min-h-screen bg-muted/20 md:grid md:grid-cols-[16rem_minmax(0,1fr)] md:overflow-hedden">
       <DashboardSidebar
         user={user}
         userRole={userRole}
@@ -46,10 +46,10 @@ export default function DashboardLayout({
       />
 
       {/* Main Content Area */}
-      <main className="min-w-0 overflow-y-auto">
+      <main className="min-w-0 flex flex-col h-screen md:h-screen md:max-h-screen">
         <DashboardMobileHeader userRole={userRole} />
 
-        <div className="p-6 md:p-10">
+        <div className="flex-1 overflow-y-scroll p-6 md:p-10">
           {children}
         </div>
       </main>

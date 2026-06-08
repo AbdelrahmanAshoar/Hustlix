@@ -83,6 +83,7 @@ export default function FreelancerEarningsPage() {
         </Button>
       </div>
 
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -121,6 +122,7 @@ export default function FreelancerEarningsPage() {
         </Card>
       </div>
 
+      {/* Accepted Project Earnings List */}
       <Card>
         <CardHeader>
           <CardTitle>Accepted Project Earnings</CardTitle>

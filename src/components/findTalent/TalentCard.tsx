@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Star, Clock } from "lucide-react";
+import { normalizeImageUrl } from "@/lib/imageUrl";
 import type { TalentProfile } from "@/services/client/getFreelancers";
 
 type TalentCardProps = {
@@ -23,7 +25,7 @@ export default function TalentCard({ talent, onViewProfile }: TalentCardProps) {
       <CardHeader className="flex flex-col gap-4 p-6">
         <div className="flex items-center gap-4">
           <Avatar className="h-20 w-20 border border-primary/20">
-            <AvatarImage src={talent.profilePictureUrl || undefined} />
+            <AvatarImage src={normalizeImageUrl(talent.profilePictureUrl)} />
             <AvatarFallback>{talent.fullName.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
@@ -70,7 +72,7 @@ export default function TalentCard({ talent, onViewProfile }: TalentCardProps) {
           <Badge variant="outline">{talent.rating >= 4.8 ? "Top Rated" : talent.rating >= 4.0 ? "Verified" : "New"}</Badge>
         </div>
 
-        <div className="flex justify-between items-center gap-3 pt-3">
+        <div className="flex flex-wrap justify-between items-center gap-3 pt-3">
           <Button
             size="sm"
             className="rounded-full"
@@ -78,9 +80,21 @@ export default function TalentCard({ talent, onViewProfile }: TalentCardProps) {
           >
             View profile
           </Button>
-          <Button size="sm" variant="outline" className="rounded-full">
-            Hire now
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/dashboard/messages?userId=${talent.userId ?? talent.id}&userName=${encodeURIComponent(
+                talent.fullName
+              )}`}
+              className="inline-flex"
+            >
+              <Button asChild size="sm" variant="outline" className="rounded-full">
+                <span>Message</span>
+              </Button>
+            </Link>
+            <Button size="sm" variant="secondary" className="rounded-full">
+              Hire now
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

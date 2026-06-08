@@ -17,7 +17,7 @@ export default function FindTalentPage() {
   const [featuredFreelancers, setFeaturedFreelancers] = useState<TalentProfile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFeaturedLoading, setIsFeaturedLoading] = useState(false);
-
+  console.log("Talent data in FindTalentPage:", talent); // Debugging line
   const fetchTalent = useCallback(async () => {
     setIsLoading(true);
     try {

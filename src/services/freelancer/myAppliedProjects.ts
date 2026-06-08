@@ -1,3 +1,8 @@
+/**
+ * Type representing a freelancer's applied project (proposal).
+ * The `project` field is populated when the API returns nested project data;
+ * otherwise top-level fields (title, budget, etc.) are used directly.
+ */
 export interface AppliedProject {
   id: number;
   projectId?: number;
@@ -15,6 +20,7 @@ export interface AppliedProject {
     status?: string;
     requiredSkills?: string;
   };
+  // Flat fields (when API returns project data at the top level)
   title?: string;
   description?: string;
   budget?: number;
@@ -24,6 +30,10 @@ export interface AppliedProject {
   workDeliveryId?: number;
 }
 
+/**
+ * Fetches all projects the current freelancer has applied to.
+ * Handles multiple possible API response shapes gracefully.
+ */
 export const getMyAppliedProjects = async (): Promise<AppliedProject[]> => {
   const res = await fetch("/api/Freelancer/my-applied-projects", {
     method: "GET",

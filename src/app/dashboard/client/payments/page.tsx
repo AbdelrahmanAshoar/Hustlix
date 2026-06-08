@@ -59,6 +59,7 @@ export default async function ClientPaymentsPage() {
         </p>
       </div>
 
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -97,6 +98,7 @@ export default async function ClientPaymentsPage() {
         </Card>
       </div>
 
+      {/* Project Payment Timeline */}
       <Card>
         <CardHeader>
           <CardTitle>Project Payment Timeline</CardTitle>

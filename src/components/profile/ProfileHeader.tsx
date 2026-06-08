@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, BriefcaseBusiness, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { API_BASE_URL } from "@/config";
+import { normalizeImageUrl } from "@/lib/imageUrl";
 import type { ProfilePageData } from "./types";
 
 interface ProfileHeaderProps {
@@ -12,12 +12,6 @@ interface ProfileHeaderProps {
 export default function ProfileHeader({ data }: ProfileHeaderProps) {
   const { auth, personalInfo, professionalInfo, portfolio, profileProgress } = data;
   const { userRole } = useAuth();
-
-  const getFullUrl = (path?: string) => {
-    if (!path) return "/default.png";
-    if (path.startsWith("data:image")) return path;
-    return `${API_BASE_URL}${path}`;
-  };
 
   const joinedDate = auth?.createdAt
     ? new Date(auth.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
@@ -57,7 +51,7 @@ export default function ProfileHeader({ data }: ProfileHeaderProps) {
             <div className="flex items-start gap-4">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white bg-white shadow-sm">
                 <Image
-                  src={getFullUrl(personalInfo?.photoUrl)}
+                  src={normalizeImageUrl(personalInfo?.photoUrl)}
                   alt="profile"
                   fill
                   className="object-cover"

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { normalizeImageUrl } from "@/lib/imageUrl";
 import Image from "next/image";
 import {
   Card,
@@ -204,7 +205,7 @@ export default function ProfilePage() {
       {/* Profile Header */}
       <div className="flex flex-col md:flex-row gap-8 items-start mb-12 bg-card p-8 border rounded-xl shadow-sm">
         <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-primary/10">
-          <AvatarImage src={profile.profilePictureUrl || "https://i.pravatar.cc/150?img=11"} />
+          <AvatarImage src={normalizeImageUrl(profile.profilePictureUrl)} />
           <AvatarFallback className="text-3xl">{getInitials()}</AvatarFallback>
         </Avatar>
         

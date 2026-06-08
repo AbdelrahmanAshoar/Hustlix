@@ -83,8 +83,8 @@ export default function DashboardSidebar({
   const currentRoleConfig = getRoleDisplayConfig(userRole);
 
   return (
-    <aside className="hidden flex-col border-r bg-card md:sticky md:top-0 md:flex md:h-screen">
-      <div className="border-b p-6">
+<aside className="hidden flex-col border-r bg-card md:sticky md:top-0 md:flex md:h-screen md:max-h-screen md:flex-col">
+        <div className="border-b p-6">
         <Link href="/" className="text-xl font-bold tracking-tight text-primary">
           <Image src={logo} alt="logo" width={120} height={120} />
         </Link>
@@ -95,7 +95,7 @@ export default function DashboardSidebar({
         </div>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto px-4 py-6">
+      <div className="flex-1 space-y-2 overflow-y-auto px-4 py-6 pb-0">
         <div className="mb-4 mt-2 px-2 text-xs font-semibold uppercase text-muted-foreground">
           {userRole} Menu
         </div>

@@ -1,14 +1,13 @@
 "use client";
 
 import ChatComponent from "@/components/chat/ChatComponent";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { API_BASE_URL } from "@/config";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { MessageSquare } from "lucide-react";
 
 export default function MessagesPage() {
   const { user, isLoading } = useAuth();
-
+   console.log("User in MessagesPage:", user); // Debugging line
   if (isLoading) {
     return (
       <Card>
@@ -32,23 +31,17 @@ export default function MessagesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Message Center</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <MessageSquare className="h-6 w-6 inline mr-2" strokeWidth={3.5} />
+          Message Center
+          </h1>
         <p className="text-muted-foreground">
           Continue project conversations and exchange attachments.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Project Chat
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChatComponent userId={user.id.toString()} hubUrl={`${API_BASE_URL}/chatHub`} />
-        </CardContent>
-      </Card>
+      <ChatComponent currentUser={user} />
+
     </div>
   );
 }
