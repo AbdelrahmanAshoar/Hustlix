@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { DollarSign, Users, Activity, Settings, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   return (
@@ -45,16 +46,18 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted-foreground">In progress</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Disputes / Reports</CardTitle>
-            <AlertCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">5</div>
-            <p className="text-xs text-muted-foreground">Requires immediate review</p>
-          </CardContent>
-        </Card>
+        <Link href="/dashboard/admin/disputes" className="block transition-transform hover:scale-[1.02]">
+          <Card className="border-destructive/30 hover:border-destructive/60 transition-all shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Disputes / Reports</CardTitle>
+              <AlertCircle className="h-4 w-4 text-destructive animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">Review</div>
+              <p className="text-xs text-muted-foreground">Requires immediate review</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -100,10 +103,12 @@ export default function AdminDashboard() {
                 <Settings className="h-5 w-5 text-primary" />
                 <span className="text-sm">Sanity CMS Sync</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2 text-destructive hover:bg-destructive/10 border-destructive/20 hover:text-destructive">
-                <AlertCircle className="h-5 w-5" />
-                <span className="text-sm">Resolve Disputes (5)</span>
-              </Button>
+              <Link href="/dashboard/admin/disputes" className="w-full block col-span-1">
+                <Button variant="outline" className="w-full h-full py-4 flex flex-col items-center gap-2 text-destructive hover:bg-destructive/10 border-destructive/20 hover:text-destructive">
+                  <AlertCircle className="h-5 w-5 animate-pulse" />
+                  <span className="text-sm">Resolve Disputes</span>
+                </Button>
+              </Link>
               <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" />
                 <span className="text-sm">System Logs</span>

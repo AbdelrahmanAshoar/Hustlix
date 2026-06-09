@@ -12,6 +12,7 @@ import {
   Star,
   Users,
   BarChart3,
+  AlertCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -47,7 +48,7 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     { name: 'Overview', href: '/dashboard/admin', icon: LayoutDashboard },
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { name: 'Analytics', href: '/dashboard/admin/analytics', icon: BarChart3 },
-    { name: 'Reports', href: '/dashboard/admin/reports', icon: FileText },
+    { name: 'Disputes', href: '/dashboard/admin/disputes', icon: AlertCircle },
     { name: 'System Settings', href: '/dashboard/admin/system', icon: Shield },
   ],
   Client: [

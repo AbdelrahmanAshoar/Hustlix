@@ -13,7 +13,6 @@ export const getProjectByID = async (id: number) => {
 
     return data;
   } catch (err) {
-    console.error("getProject error:", err);
     throw err;
   }
 };

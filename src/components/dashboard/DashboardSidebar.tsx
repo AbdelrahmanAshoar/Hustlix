@@ -81,6 +81,9 @@ export default function DashboardSidebar({
 }: DashboardSidebarProps) {
   const roleItems = getRoleNavItems(userRole);
   const currentRoleConfig = getRoleDisplayConfig(userRole);
+  const commonItems = userRole === 'Admin'
+    ? COMMON_NAV_ITEMS.filter((item) => item.name !== 'Messages')
+    : COMMON_NAV_ITEMS;
 
   return (
 <aside className="hidden flex-col border-r bg-card md:sticky md:top-0 md:flex md:h-screen md:max-h-screen md:flex-col">
@@ -104,7 +107,7 @@ export default function DashboardSidebar({
         <div className="mb-4 mt-8 px-2 text-xs font-semibold uppercase text-muted-foreground">
           General
         </div>
-        <NavSection items={COMMON_NAV_ITEMS} pathname={pathname} />
+        <NavSection items={commonItems} pathname={pathname} />
       </div>
 
       <div className="border-t p-4">

@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data, { status: 200 });
   } catch (err: any) {
-    console.error("API Error:", err);
+
     return NextResponse.json(
       { success: false, message: err.message || "Server error" },
       { status: 500 }

@@ -17,7 +17,6 @@ export default function FindTalentPage() {
   const [featuredFreelancers, setFeaturedFreelancers] = useState<TalentProfile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFeaturedLoading, setIsFeaturedLoading] = useState(false);
-  console.log("Talent data in FindTalentPage:", talent); // Debugging line
   const fetchTalent = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -29,7 +28,6 @@ export default function FindTalentPage() {
 
       setTalent(response?.data ?? []);
     } catch (error) {
-      console.error("Failed to fetch talent:", error);
       toast.error("Unable to load talent. Please try again.");
       setTalent([]);
     } finally {
@@ -47,7 +45,6 @@ export default function FindTalentPage() {
       const response = await getFreelancers({ page: 1, limit: 4 });
       setFeaturedFreelancers(response?.data ?? []);
     } catch (error) {
-      console.error("Unable to load featured freelancers:", error);
       setFeaturedFreelancers([]);
     } finally {
       setIsFeaturedLoading(false);

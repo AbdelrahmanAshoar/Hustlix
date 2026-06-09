@@ -31,8 +31,6 @@ export async function GET(req: Request) {
 
     return Response.json(data);
   } catch (error) {
-    console.error("API error:", error);
-
     return Response.json([], { status: 500 });
   }
 }

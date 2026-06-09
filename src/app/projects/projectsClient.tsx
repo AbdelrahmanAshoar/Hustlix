@@ -16,8 +16,7 @@ import { ProjectData } from "../services/types/freelancer";
 import Link from "next/link";
 
 export default function ProjectsClient({ data }: { data: ProjectData[] }) {
-  console.log("**************************Received projects data:", data);
-  
+
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string[]>([]);
@@ -57,12 +56,12 @@ export default function ProjectsClient({ data }: { data: ProjectData[] }) {
   // Filter projects based on search and filters
   const filteredProjects = data.filter((project) => {
     // Search by title or skills
-    const matchesSearch = searchTerm === "" || 
+    const matchesSearch = searchTerm === "" ||
       project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.requiredSkills && project.requiredSkills.toLowerCase().includes(searchTerm.toLowerCase()));
 
     // Category filter
-    const matchesCategory = selectedCategory.length === 0 || 
+    const matchesCategory = selectedCategory.length === 0 ||
       (() => {
         if (selectedCategory.includes('Web Development') && project.requiredSkills?.toLowerCase().includes('web')) return true;
         if (selectedCategory.includes('Mobile Apps') && (project.requiredSkills?.toLowerCase().includes('mobile') || project.requiredSkills?.toLowerCase().includes('app'))) return true;
@@ -161,16 +160,16 @@ export default function ProjectsClient({ data }: { data: ProjectData[] }) {
   // Filter projects by budget type
   const budgetFilteredProjects = selectedBudgetType.length > 0
     ? paginatedProjects.filter(() => {
-        // Assuming fixed price for now (you can adjust based on your data structure)
-        return true;
-      })
+      // Assuming fixed price for now (you can adjust based on your data structure)
+      return true;
+    })
     : paginatedProjects;
 
   // Filter by experience level
   const experienceFilteredProjects = selectedExperience.length > 0
-    ? budgetFilteredProjects.filter(project => 
-        selectedExperience.includes(getExperienceLevel(project.budget))
-      )
+    ? budgetFilteredProjects.filter(project =>
+      selectedExperience.includes(getExperienceLevel(project.budget))
+    )
     : budgetFilteredProjects;
 
   const finalProjects = experienceFilteredProjects;
@@ -295,8 +294,8 @@ export default function ProjectsClient({ data }: { data: ProjectData[] }) {
               </div>
             </div>
 
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
               onClick={clearFilters}
             >
@@ -310,7 +309,7 @@ export default function ProjectsClient({ data }: { data: ProjectData[] }) {
               <span className="text-sm font-medium text-muted-foreground">
                 Showing {finalProjects.length} of {filteredProjects.length} projects
               </span>
-              <select 
+              <select
                 className="border rounded-md text-sm p-2 bg-background cursor-pointer"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -411,7 +410,7 @@ export default function ProjectsClient({ data }: { data: ProjectData[] }) {
                     } else {
                       pageNum = currentPage - 2 + i;
                     }
-                    
+
                     return (
                       <Button
                         key={pageNum}

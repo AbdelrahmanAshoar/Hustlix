@@ -59,7 +59,6 @@ export default function FreelancerAddProposalPage() {
     if (projectId && !isNaN(projectId)) {
       fetchProjectDetails();
     } else {
-      console.error("Invalid project ID:", params.projectId);
       toast.error("Invalid project ID");
     }
   }, [projectId]);
@@ -138,7 +137,6 @@ export default function FreelancerAddProposalPage() {
       coverLetter: formData.coverLetter.trim(),
     };
 
-    console.log("Submitting proposal data:", proposalData);
 
     try {
       const result = await addProposal(proposalData);
@@ -154,7 +152,6 @@ export default function FreelancerAddProposalPage() {
         toast.error(result.message || "Failed to submit proposal");
       }
     } catch (error: any) {
-      console.error("Submission error:", error);
       toast.error(
         error.message || "Failed to submit proposal. Please try again.",
       );
@@ -166,31 +163,31 @@ export default function FreelancerAddProposalPage() {
   // Quick price suggestions based on project budget
   const quickPriceSuggestions = projectBudget
     ? [
-        {
-          label: "Budget",
-          value: Math.round(projectBudget * 0.6),
-          days: 45,
-          icon: "💰",
-        },
-        {
-          label: "Standard",
-          value: Math.round(projectBudget * 0.8),
-          days: 30,
-          icon: "⭐",
-        },
-        {
-          label: "Premium",
-          value: Math.round(projectBudget * 1.0),
-          days: 21,
-          icon: "💎",
-        },
-        {
-          label: "Express",
-          value: Math.round(projectBudget * 1.3),
-          days: 14,
-          icon: "⚡",
-        },
-      ]
+      {
+        label: "Budget",
+        value: Math.round(projectBudget * 0.6),
+        days: 45,
+        icon: "💰",
+      },
+      {
+        label: "Standard",
+        value: Math.round(projectBudget * 0.8),
+        days: 30,
+        icon: "⭐",
+      },
+      {
+        label: "Premium",
+        value: Math.round(projectBudget * 1.0),
+        days: 21,
+        icon: "💎",
+      },
+      {
+        label: "Express",
+        value: Math.round(projectBudget * 1.3),
+        days: 14,
+        icon: "⚡",
+      },
+    ]
     : [];
 
   const applySuggestion = (price: number, days: number) => {
@@ -358,11 +355,10 @@ export default function FreelancerAddProposalPage() {
                       placeholder="e.g., 2500"
                       value={formData.proposedPrice}
                       onChange={handleChange}
-                      className={`pl-9 transition-all focus:ring-2 focus:ring-emerald-500 ${
-                        errors.proposedPrice
+                      className={`pl-9 transition-all focus:ring-2 focus:ring-emerald-500 ${errors.proposedPrice
                           ? "border-red-500 focus:ring-red-500"
                           : ""
-                      }`}
+                        }`}
                       required
                     />
                   </div>
@@ -398,11 +394,10 @@ export default function FreelancerAddProposalPage() {
                       placeholder="e.g., 14"
                       value={formData.deliveryDays}
                       onChange={handleChange}
-                      className={`pl-9 transition-all focus:ring-2 focus:ring-emerald-500 ${
-                        errors.deliveryDays
+                      className={`pl-9 transition-all focus:ring-2 focus:ring-emerald-500 ${errors.deliveryDays
                           ? "border-red-500 focus:ring-red-500"
                           : ""
-                      }`}
+                        }`}
                       required
                     />
                   </div>
@@ -499,11 +494,10 @@ Best regards,
 [Your Name]`}
                   value={formData.coverLetter}
                   onChange={handleChange}
-                  className={`resize-none transition-all focus:ring-2 focus:ring-emerald-500 ${
-                    errors.coverLetter
+                  className={`resize-none transition-all focus:ring-2 focus:ring-emerald-500 ${errors.coverLetter
                       ? "border-red-500 focus:ring-red-500"
                       : ""
-                  }`}
+                    }`}
                   required
                 />
                 {errors.coverLetter && (

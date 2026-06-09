@@ -97,7 +97,7 @@ export default function ProfilePage() {
     try {
       // Simulated API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Mock data based on role
       const mockProfile: ProfileData = {
         id: user?.id || 1,
@@ -105,20 +105,20 @@ export default function ProfilePage() {
         email: user?.email || "jane@example.com",
         role: user?.role as "Client" | "Freelancer" | "Admin" || "Freelancer",
         profilePictureUrl: user?.profilePictureUrl || null,
-        bio: user?.role === "Freelancer" 
+        bio: user?.role === "Freelancer"
           ? "Hi! I'm a passionate UI/UX designer and frontend developer with over 6 years of experience building beautiful, responsive, and user-friendly digital products. My expertise lies in bridging the gap between design and development, ensuring that the final product not only looks great but also functions seamlessly."
           : "We are a tech company looking for talented freelancers to help us build amazing products. We believe in quality work and building long-term relationships with our collaborators.",
         location: "San Francisco, CA",
-        skills: user?.role === "Freelancer" 
+        skills: user?.role === "Freelancer"
           ? ["Figma", "React", "Next.js", "Tailwind", "Framer Motion", "TypeScript", "Node.js"]
           : ["Project Management", "UI/UX Design", "Product Strategy", "Agile Methodologies"],
         hourlyRate: user?.role === "Freelancer" ? 60 : undefined,
         experience: user?.role === "Freelancer" ? 6 : undefined,
         languages: user?.role === "Freelancer"
           ? [
-              { name: "English", proficiency: "Fluent (C2)" },
-              { name: "Spanish", proficiency: "Conversational" }
-            ]
+            { name: "English", proficiency: "Fluent (C2)" },
+            { name: "Spanish", proficiency: "Conversational" }
+          ]
           : undefined,
         portfolio: user?.role === "Freelancer" ? [
           {
@@ -136,21 +136,21 @@ export default function ProfilePage() {
             technologies: ["Figma", "React Native"]
           }
         ] : undefined,
-        stats: user?.role === "Freelancer" 
+        stats: user?.role === "Freelancer"
           ? {
-              rating: 4.9,
-              totalJobs: 45,
-              totalEarnings: 45000,
-              responseTime: "< 24 hrs",
-              completedProjects: 42,
-              activeProjects: 3
-            }
+            rating: 4.9,
+            totalJobs: 45,
+            totalEarnings: 45000,
+            responseTime: "< 24 hrs",
+            completedProjects: 42,
+            activeProjects: 3
+          }
           : {
-              completedProjects: 28,
-              activeProjects: 12,
-              spentAmount: 35000,
-              hireRate: 85
-            },
+            completedProjects: 28,
+            activeProjects: 12,
+            spentAmount: 35000,
+            hireRate: 85
+          },
         socialLinks: {
           linkedin: "https://linkedin.com/in/janedoe",
           github: "https://github.com/janedoe",
@@ -159,10 +159,9 @@ export default function ProfilePage() {
         company: user?.role === "Client" ? "TechCorp Inc." : undefined,
         position: user?.role === "Client" ? "Product Manager" : undefined
       };
-      
+
       setProfile(mockProfile);
     } catch (error) {
-      console.error("Error fetching profile:", error);
     } finally {
       setIsLoading(false);
     }
@@ -208,7 +207,7 @@ export default function ProfilePage() {
           <AvatarImage src={normalizeImageUrl(profile.profilePictureUrl)} />
           <AvatarFallback className="text-3xl">{getInitials()}</AvatarFallback>
         </Avatar>
-        
+
         <div className="flex-1 space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -234,25 +233,25 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-6 text-sm">
             {isFreelancer && profile.stats?.rating && (
               <div className="flex items-center text-amber-500 font-bold">
                 ★ {profile.stats.rating} <span className="text-muted-foreground font-normal ml-1">({profile.stats.totalJobs} Jobs)</span>
               </div>
             )}
-            
+
             {profile.location && (
               <div className="flex items-center gap-1 text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 {profile.location}
               </div>
             )}
-            
+
             {isFreelancer && profile.hourlyRate && (
               <div className="font-semibold text-primary">${profile.hourlyRate}/hr</div>
             )}
-            
+
             {isClient && profile.stats?.hireRate && (
               <div className="flex items-center gap-1 text-green-600">
                 <TrendingUp className="h-4 w-4" />
@@ -260,7 +259,7 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
-          
+
           {profile.skills && profile.skills.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
               {profile.skills.slice(0, 6).map((skill) => (
@@ -454,8 +453,8 @@ export default function ProfilePage() {
                 {profile.portfolio.map((item) => (
                   <div key={item.id} className="group relative overflow-hidden rounded-xl border bg-card">
                     <div className="aspect-video relative overflow-hidden">
-                      <img 
-                        src={item.imageUrl} 
+                      <img
+                        src={item.imageUrl}
                         alt={item.title}
                         className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                       />

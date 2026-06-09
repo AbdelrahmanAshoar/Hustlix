@@ -40,60 +40,57 @@ export default function ViewProposalsPage() {
     fetchProposals();
   }, [projectId]);
 
-// app/dashboard/client/viewProposals/[id]/page.tsx
-const fetchProposals = async () => {
-  setIsLoading(true);
-  setError(null);
-  try {
-    // Get token from cookies
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) {
-        return parts.pop()?.split(';').shift();
-      }
-      return null;
-    };
-
-    const token = getCookie('token');
-
-    const response = await fetch(
-      `${API_BASE_URL}/api/Client/project-proposals/filter?ProjectId=${projectId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    // Get response as text first
-    const responseText = await response.text();
-    console.log("Raw response:", responseText);
-
-    let proposalsData = [];
-    
-    // Try to parse as JSON
+  // app/dashboard/client/viewProposals/[id]/page.tsx
+  const fetchProposals = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const parsedData = JSON.parse(responseText);
-      proposalsData = Array.isArray(parsedData) ? parsedData : [];
-    } catch (parseError) {
-      // If it's not JSON (like "No proposals found"), return empty array
-      console.log("Response is not JSON, returning empty array");
-      proposalsData = [];
-    }
+      // Get token from cookies
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+          return parts.pop()?.split(';').shift();
+        }
+        return null;
+      };
 
-    setProposals(proposalsData);
-    
-  } catch (err: any) {
-    console.error("Error fetching proposals:", err);
-    setError(err.message || "Failed to load proposals");
-    setProposals([]); // Set empty array on error
-  } finally {
-    setIsLoading(false);
-  }
-};
+      const token = getCookie('token');
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/Client/project-proposals/filter?ProjectId=${projectId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Get response as text first
+      const responseText = await response.text();
+
+      let proposalsData = [];
+
+      // Try to parse as JSON
+      try {
+        const parsedData = JSON.parse(responseText);
+        proposalsData = Array.isArray(parsedData) ? parsedData : [];
+      } catch (parseError) {
+        // If it's not JSON (like "No proposals found"), return empty array
+        proposalsData = [];
+      }
+
+      setProposals(proposalsData);
+
+    } catch (err: any) {
+      setError(err.message || "Failed to load proposals");
+      setProposals([]); // Set empty array on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAcceptProposal = async (proposal: Proposal) => {
     try {
@@ -112,9 +109,9 @@ const fetchProposals = async () => {
         prev.map((p) =>
           p.id === proposal.id
             ? { ...p, status: "Accepted" }
-            : p.status === "Pending" 
-            ? { ...p, status: "Rejected" }
-            : p
+            : p.status === "Pending"
+              ? { ...p, status: "Rejected" }
+              : p
         )
       );
 
@@ -122,10 +119,9 @@ const fetchProposals = async () => {
       setTimeout(() => {
         fetchProposals();
       }, 2000);
-      
+
     } catch (error) {
       toast.error("Something went wrong");
-      console.error(error);
     } finally {
       setLoadingId(null);
     }
@@ -201,7 +197,7 @@ const fetchProposals = async () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Link>
-          
+
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Proposals</h1>

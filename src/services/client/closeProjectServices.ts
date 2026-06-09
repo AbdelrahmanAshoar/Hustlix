@@ -4,7 +4,6 @@ export const closeProjectServices = async (projectId: number) => {
   })
 
   const data = await res.json()
-  console.log("*************closed***************")
 
   if (!res.ok) {
     throw new Error(data.message || "Failed to close project")

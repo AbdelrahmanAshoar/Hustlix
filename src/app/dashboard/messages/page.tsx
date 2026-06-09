@@ -7,7 +7,6 @@ import { MessageSquare } from "lucide-react";
 
 export default function MessagesPage() {
   const { user, isLoading } = useAuth();
-   console.log("User in MessagesPage:", user); // Debugging line
   if (isLoading) {
     return (
       <Card>
@@ -34,7 +33,7 @@ export default function MessagesPage() {
         <h1 className="text-3xl font-bold tracking-tight">
           <MessageSquare className="h-6 w-6 inline mr-2" strokeWidth={3.5} />
           Message Center
-          </h1>
+        </h1>
         <p className="text-muted-foreground">
           Continue project conversations and exchange attachments.
         </p>

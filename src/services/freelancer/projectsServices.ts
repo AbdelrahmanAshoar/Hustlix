@@ -12,15 +12,12 @@ export const projectsServices = async () => {
       },
     });
 
-    console.log("STATUS:", res.status);
 
     if (!res.ok) {
-      console.log("ERROR:", res.statusText);
       return [];
     }
 
     const data = await res.json();
-    console.log("DATA:", data);
 
     return data;
   } catch (error) {

@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   Card,
   CardContent,
   CardDescription,
@@ -23,7 +23,7 @@ import { Briefcase, User, Loader2 } from "lucide-react";
 export default function RegisterForm() {
   const [typeUser, setTypeUser] = useState<"client" | "freelancer">("client");
   const router = useRouter();
-  
+
   const {
     register,
     handleSubmit,
@@ -46,31 +46,26 @@ export default function RegisterForm() {
 
     // Clean phone number - remove any spaces, dashes, parentheses
     const cleanPhoneNumber = data.phoneNumber.replace(/[\s\-\(\)\+]/g, '');
-    
+
     if (cleanPhoneNumber.length < 10) {
       toast.error("Please enter a valid phone number (at least 10 digits)");
       return;
     }
 
     const loadingToast = toast.loading("Creating your account...");
-    
+
     try {
-      console.log("Form data being sent:", {
-        ...data,
-        phoneNumber: cleanPhoneNumber
-      });
-      
       await registerServices({
         ...data,
         phoneNumber: cleanPhoneNumber
       }, typeUser);
-      
+
       toast.success("Account created successfully!", {
         id: loadingToast,
         description: `Welcome to Hustlix! Redirecting you...`,
         duration: 3000,
       });
-      
+
       // Redirect based on role
       setTimeout(() => {
         if (typeUser === "freelancer") {
@@ -79,9 +74,8 @@ export default function RegisterForm() {
           router.push("/dashboard/client");
         }
       }, 1500);
-      
+
     } catch (error: any) {
-      console.error("Registration error:", error);
       toast.error("Registration failed", {
         id: loadingToast,
         description: error.message || "Something went wrong. Please check your information.",
@@ -101,7 +95,7 @@ export default function RegisterForm() {
             Choose your account type and enter your details to get started
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           {/* Role Selection */}
           <div className="space-y-3">
@@ -113,10 +107,9 @@ export default function RegisterForm() {
               <div
                 onClick={() => setTypeUser("client")}
                 className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all text-center
-                  ${
-                    typeUser === "client"
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-border hover:border-primary/50 hover:bg-muted/30"
+                  ${typeUser === "client"
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-border hover:border-primary/50 hover:bg-muted/30"
                   }
                 `}
               >
@@ -140,10 +133,9 @@ export default function RegisterForm() {
               <div
                 onClick={() => setTypeUser("freelancer")}
                 className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all text-center
-                  ${
-                    typeUser === "freelancer"
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-border hover:border-primary/50 hover:bg-muted/30"
+                  ${typeUser === "freelancer"
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-border hover:border-primary/50 hover:bg-muted/30"
                   }
                 `}
               >
@@ -266,9 +258,9 @@ export default function RegisterForm() {
               )}
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full mt-4" 
+            <Button
+              type="submit"
+              className="w-full mt-4"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -282,7 +274,7 @@ export default function RegisterForm() {
             </Button>
           </form>
         </CardContent>
-        
+
         <CardFooter className="flex justify-center text-sm">
           <p className="text-muted-foreground">
             Already have an account?{" "}

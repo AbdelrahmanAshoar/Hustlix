@@ -20,14 +20,12 @@ export const getProjects = async () => {
   const text = await res.text();
 
   if (!res.ok) {
-    console.log("❌ Failed to fetch projects:", text);
     return { projects: [] };
   }
 
   try {
     return text ? JSON.parse(text) : { projects: [] };
   } catch (err) {
-    console.log("❌ Invalid JSON:", text);
     return { projects: [] };
   }
 };

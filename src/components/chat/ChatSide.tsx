@@ -36,7 +36,7 @@ export default function Chatside({ conversations, selectedId, onSelect, isOnline
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
         {conversations.length > 0 ? (
           conversations.map((c) => (
-            <div 
+            <div
               key={c.otherUser.id}
               onClick={() => onSelect(c)}
               className={cn(

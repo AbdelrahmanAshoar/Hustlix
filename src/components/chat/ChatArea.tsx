@@ -104,9 +104,8 @@ export default function ChatArea({ selectedConv, messages, onSendMessage, curren
           return (
             <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
               <div className={`group relative max-w-[70%] ${isMe ? 'order-1' : 'order-2'}`}>
-                <div className={`py-1 px-2 rounded-xl text-sm shadow-sm leading-relaxed ${
-                  isMe ? 'bg-blue-400 text-primary-foreground rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'
-                }`}>
+                <div className={`py-1 px-2 rounded-xl text-sm shadow-sm leading-relaxed ${isMe ? 'bg-blue-400 text-primary-foreground rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'
+                  }`}>
                   {msg.message}
                   {msg.attachmentUrl ? (
                     <div className="mt-2 rounded-lg bg-slate-100 p-2 text-xs text-slate-700">

@@ -7,7 +7,6 @@ export const selectFreelancer = async (proposalId: number) => {
     body: JSON.stringify({ proposalId }),
   });
 
-  console.log("Response from selectFreelancer:", proposalId);
 
   const data = await res.json();
 

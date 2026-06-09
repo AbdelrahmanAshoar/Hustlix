@@ -34,21 +34,22 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginDto) => {
     try {
       const res = await loginServices(data);
-      
+
       // Store both token and user data
       login(res.token, res.user);
-      
-      console.log("User role:", res.user.role);
-      
+
+
       // Role-based redirect
       if (res.user.role === "Client") {
         router.push("/dashboard/client");
       } else if (res.user.role === "Freelancer") {
         router.push("/projects");
+      } else if (res.user.role === "Admin") {
+        router.push("/dashboard/admin");
       } else {
         router.push("/dashboard");
       }
-      
+
     } catch (error) {
       alert((error as Error).message);
     }

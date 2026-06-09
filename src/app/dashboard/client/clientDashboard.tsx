@@ -11,12 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { closeProjectServices } from "@/services/client/closeProjectServices";
 import { editProjectServices } from "@/services/client/editProjectServices";
+import { deleteProject, submitDispute } from "@/services/client/clientDisputeServices";
 import {
   clientProjects,
   EditMilestoneDto,
   EditProjectDto,
 } from "@/app/services/types/client";
-import { Briefcase, Users, FileText, Activity, Loader2 } from "lucide-react";
+import { Briefcase, Users, FileText, Activity, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
@@ -33,6 +34,13 @@ import { useState } from "react";
 export default function ClientDashboard({ data }: { data: clientProjects[] }) {
   const [projects, setProjects] = useState(data);
   const [isLoading, setIsLoading] = useState(false);
+
+  // State for dispute dialog
+  const [isDisputeDialogOpen, setIsDisputeDialogOpen] = useState(false);
+  const [disputeProjectId, setDisputeProjectId] = useState<number | null>(null);
+  const [disputeProjectTitle, setDisputeProjectTitle] = useState("");
+  const [disputeReason, setDisputeReason] = useState("");
+  const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
 
   // State for edit dialog
   const [selectedProject, setSelectedProject] = useState<clientProjects | null>(
@@ -108,7 +116,6 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
     // If deadline is in the past, suggest a future date
     const today = new Date().toISOString().split("T")[0];
     if (deadlineDate && new Date(deadlineDate) < new Date(today)) {
-      console.warn("⚠️ Project deadline is in the past:", deadlineDate);
       // Optionally set to today or keep as is
       // deadlineDate = today;
     }
@@ -175,13 +182,13 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
         prev.map((p) =>
           p.id === selectedProject.id
             ? {
-                ...p,
-                title: payload.title,
-                description: payload.description,
-                budget: payload.budget,
-                deadline: payload.deadline,
-                requiredSkills: payload.requiredSkills,
-              }
+              ...p,
+              title: payload.title,
+              description: payload.description,
+              budget: payload.budget,
+              deadline: payload.deadline,
+              requiredSkills: payload.requiredSkills,
+            }
             : p,
         ),
       );
@@ -189,12 +196,54 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
       setIsEditDialogOpen(false);
 
       alert("✅ Project updated successfully!");
-      console.log("Response:", result);
     } catch (err: any) {
-      console.error(err);
       alert(err.message || "Update failed");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteProjectClick = async (projectId: number, projectTitle: string) => {
+    setIsLoading(true);
+    try {
+      await deleteProject(projectId);
+      alert("✅ Project deleted successfully!");
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+    } catch (err: any) {
+      const errorMsg = err.message || "";
+      if (
+        errorMsg.includes("active freelancer") ||
+        errorMsg.includes("dispute") ||
+        err.status === 400
+      ) {
+        setDisputeProjectId(projectId);
+        setDisputeProjectTitle(projectTitle);
+        setDisputeReason("");
+        setIsDisputeDialogOpen(true);
+      } else {
+        alert(errorMsg || "Failed to delete project");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDisputeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!disputeProjectId || !disputeReason.trim()) return;
+
+    setIsSubmittingDispute(true);
+    try {
+      const res = await submitDispute({
+        projectId: disputeProjectId,
+        reason: disputeReason.trim(),
+      });
+      alert(`✅ ${res.message || "Dispute submitted successfully. Admin will review."}`);
+      setIsDisputeDialogOpen(false);
+    } catch (err: any) {
+      alert(err.message || "Failed to submit dispute");
+    } finally {
+      setIsSubmittingDispute(false);
     }
   };
 
@@ -420,6 +469,56 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
         </DialogContent>
       </Dialog>
 
+      {/* Dispute Dialog */}
+      <Dialog open={isDisputeDialogOpen} onOpenChange={setIsDisputeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleDisputeSubmit}>
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold tracking-tight text-destructive flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Submit Project Dispute
+              </DialogTitle>
+              <DialogDescription>
+                You have an active freelancer assigned to <span className="font-semibold text-slate-800">"{disputeProjectTitle}"</span>. 
+                Before deleting this project, you must submit a dispute for the administrator to review.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4 space-y-3">
+              <label className="text-sm font-medium text-slate-700 block">
+                Reason for dispute <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
+                placeholder="Describe why you want to delete this project (e.g., Work not completed as agreed, freelancer went unresponsive...)"
+                rows={4}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none resize-none"
+                required
+              />
+            </div>
+
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button" disabled={isSubmittingDispute}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" variant="destructive" disabled={isSubmittingDispute}>
+                {isSubmittingDispute ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Dispute"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Projects */}
@@ -516,6 +615,15 @@ export default function ClientDashboard({ data }: { data: clientProjects[] }) {
                         className="text-destructive hover:bg-destructive/10"
                       >
                         Close Job
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        disabled={isLoading}
+                        onClick={() => handleDeleteProjectClick(project.id, project.title)}
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        Delete Job
                       </Button>
                     </div>
                   </div>

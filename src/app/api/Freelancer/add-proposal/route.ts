@@ -10,7 +10,6 @@ export async function POST(req: NextRequest) {
     const cookieStore = cookies();
     const token = cookieStore.get("token")?.value;
 
-    console.log("Token found:", !!token);
 
     if (!token) {
       return NextResponse.json(
@@ -20,7 +19,6 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    console.log("Received request body:", body);
 
     // Validate required fields
     if (!body.projectId) {
@@ -59,7 +57,6 @@ export async function POST(req: NextRequest) {
       coverLetter: body.coverLetter.trim(),
     };
 
-    console.log("Sending to external API:", payload);
 
     // Make request to external API
     const response = await fetch(
@@ -75,26 +72,25 @@ export async function POST(req: NextRequest) {
     );
 
     const data = await response.json();
-    console.log("External API response:", data);
 
     if (!response.ok) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: data.message || "Failed to submit proposal to external API" 
+        {
+          success: false,
+          message: data.message || "Failed to submit proposal to external API"
         },
         { status: response.status }
       );
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: "Proposal submitted successfully",
-      data: data 
+      data: data
     }, { status: 200 });
 
   } catch (err: any) {
-    console.error("API Error in /api/Freelancer/add-proposal:", err);
+
     return NextResponse.json(
       { success: false, message: err.message || "Internal server error" },
       { status: 500 }

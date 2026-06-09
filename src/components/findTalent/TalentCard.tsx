@@ -82,18 +82,13 @@ export default function TalentCard({ talent, onViewProfile }: TalentCardProps) {
           </Button>
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href={`/dashboard/messages?userId=${talent.userId ?? talent.id}&userName=${encodeURIComponent(
-                talent.fullName
-              )}`}
+              href={`/dashboard/messages?userId=${talent.userId ?? talent.id}`}
               className="inline-flex"
             >
               <Button asChild size="sm" variant="outline" className="rounded-full">
                 <span>Message</span>
               </Button>
             </Link>
-            <Button size="sm" variant="secondary" className="rounded-full">
-              Hire now
-            </Button>
           </div>
         </div>
       </CardContent>

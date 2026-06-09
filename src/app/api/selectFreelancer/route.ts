@@ -52,7 +52,6 @@ export async function POST(req: Request) {
 
     return Response.json(data);
   } catch (error) {
-    console.error("API route error:", error);
 
     return Response.json(
       { success: false, message: "Server error" },

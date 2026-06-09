@@ -45,27 +45,31 @@ export function Navbar() {
               </>
             ) : (
               <>
-                {userRole !== 'Freelancer' && (
+                {userRole !== 'Freelancer' && userRole !== 'Admin' && (
                   <Link href="/find-talent" className="hover:text-foreground transition-colors">Find Talent</Link>
                 )}
-                {userRole !== 'Client' && (
+                {userRole !== 'Client' && userRole !== 'Admin' && (
                   <Link href="/projects" className="hover:text-foreground transition-colors">Find Work</Link>
                 )}
               </>
             )}
-            <Link href="/why-hustlix" className="hover:text-foreground transition-colors">Why Hustlix</Link>
+            {userRole !== 'Admin' && (
+              <Link href="/why-hustlix" className="hover:text-foreground transition-colors">Why Hustlix</Link>
+            )}
             {/* <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link> */}
           </div>
         </div>
 
-        <div className="hidden md:flex flex-1 max-w-sm mx-6 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input 
-            type="text" 
-            placeholder="Search skills, freelancers, projects..." 
-            className="w-full h-10 pl-9 pr-4 rounded-full bg-muted/50 border-none focus:ring-2 focus:ring-primary focus:outline-none text-sm transition-all"
-          />
-        </div>
+        {userRole !== 'Admin' && (
+          <div className="hidden md:flex flex-1 max-w-sm mx-6 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input 
+              type="text" 
+              placeholder="Search skills, freelancers, projects..." 
+              className="w-full h-10 pl-9 pr-4 rounded-full bg-muted/50 border-none focus:ring-2 focus:ring-primary focus:outline-none text-sm transition-all"
+            />
+          </div>
+        )}
 
         <div className="flex items-center space-x-4">
           {!isAuthenticated ? (

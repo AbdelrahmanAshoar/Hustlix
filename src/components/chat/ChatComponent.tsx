@@ -30,7 +30,6 @@ export default function ChatComponent({ currentUser }: any) {
   const [selectedConv, setSelectedConv] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [initialUserId, setInitialUserId] = useState<string | number | null>(null);
-  const [initialUserName, setInitialUserName] = useState<string | null>(null);
   const pendingRef = useRef<{ key: string; localId: string }[]>([]);
   const [inputText, setInputText] = useState('');
 
@@ -42,36 +41,26 @@ export default function ChatComponent({ currentUser }: any) {
   useEffect(() => { currentUserIdRef.current = currentUserId; }, [currentUserId]);
   useEffect(() => { selectedConvRef.current = selectedConv; }, [selectedConv]);
 
-  console.log('📌 ChatComponent mounted with currentUser:', currentUser);
 
   useEffect(() => {
-    const token = getCookie('token'); 
+    const token = getCookie('token');
     if (token) {
       setAuthToken(token);
       const tokenUserId = getUserIdFromToken(token);
       setCurrentUserId(tokenUserId);
-      console.log('🔐 Current User ID from token:', tokenUserId);
     }
 
     // Fallback: use currentUser prop if available
     if (currentUser?.id) {
-      console.log('👤 Current User from props:', currentUser);
       setCurrentUserId(String(currentUser.id));
     }
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const userId = params.get('userId');
-      const userName = params.get('userName');
-      console.log('🔍 URL Params:', { userId, userName });
       if (userId) {
         const parsedId = !isNaN(Number(userId)) ? Number(userId) : userId;
-        console.log('✅ Setting initialUserId:', parsedId);
         setInitialUserId(parsedId);
-      }
-      if (userName) {
-        console.log('✅ Setting initialUserName:', userName);
-        setInitialUserName(userName);
       }
     }
   }, [currentUser]);
@@ -80,7 +69,7 @@ export default function ChatComponent({ currentUser }: any) {
     if (!authToken) return;
     const res = await fetch(`${API_BASE_URL}${url}`, {
       method,
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${authToken}`,
         'Content-Type': 'application/json'
       },
@@ -152,7 +141,6 @@ export default function ChatComponent({ currentUser }: any) {
     };
 
     newConnection.on("ReceiveMessage", (msg) => {
-      console.debug('ReceiveMessage', msg);
       // Use ref for latest selectedConv and currentUserId (no stale closure)
       const currentConv = selectedConvRef.current;
       const userId = currentUserIdRef.current;
@@ -167,7 +155,6 @@ export default function ChatComponent({ currentUser }: any) {
     });
 
     newConnection.on("MessageSent", (msg) => {
-      console.debug('MessageSent', msg);
       // Use ref for latest selectedConv and currentUserId (no stale closure)
       const currentConv = selectedConvRef.current;
       const userId = currentUserIdRef.current;
@@ -194,7 +181,6 @@ export default function ChatComponent({ currentUser }: any) {
 
   const handleOpenConv = useCallback(async (conv: any) => {
     setSelectedConv(conv);
-    console.log('👥 Opening conversation with other user:', conv.otherUser);
     const data = await apiCall('GET', `/api/User/conversation-with/${conv.otherUser.id}`);
     if (data) setMessages(data);
   }, [apiCall]);
@@ -203,39 +189,35 @@ export default function ChatComponent({ currentUser }: any) {
     if (!initialUserId || !authToken) return;
     if (selectedConv?.otherUser?.id === initialUserId) return;
 
-    console.log('🎯 Opening direct conversation with userId:', initialUserId, 'userName:', initialUserName);
     const matchedConv = conversations.find((conv: any) => String(conv.otherUser.id) === String(initialUserId));
     if (matchedConv) {
-      console.log('✅ Found existing conversation, opening:', matchedConv);
       void handleOpenConv(matchedConv);
       return;
     }
 
     const openDirectConv = async () => {
+      // Open a silent placeholder (no name shown) while we fetch real data
       const placeholderConv = {
         otherUser: {
           id: initialUserId,
-          fullName: initialUserName || 'New Conversation',
+          fullName: '',
           profilePictureUrl: null,
         },
       };
-      console.log('📝 Creating placeholder conversation:', placeholderConv);
       setSelectedConv(placeholderConv);
       setConversations((prev: any) => {
         const exists = prev.some((conv: any) => String(conv.otherUser.id) === String(initialUserId));
         return exists ? prev : [placeholderConv, ...prev];
       });
       const data = await apiCall('GET', `/api/User/conversation-with/${initialUserId}`);
-      console.log('📥 Fetched messages:', data);
       if (data) setMessages(data);
     };
 
     void openDirectConv();
-  }, [initialUserId, authToken, conversations, selectedConv?.otherUser?.id, handleOpenConv, apiCall, initialUserName]);
+  }, [initialUserId, authToken, conversations, selectedConv?.otherUser?.id, handleOpenConv, apiCall]);
 
   const handleSend = async (attachment?: File | null) => {
     if (!connection || !selectedConv) return false;
-    console.debug('handleSend called', { attachment, inputText });
 
     let attachmentUrl: string | null = null;
     if (attachment) {
@@ -243,14 +225,12 @@ export default function ChatComponent({ currentUser }: any) {
         const formData = new FormData();
         formData.append('file', attachment);
 
-        console.debug('uploading attachment...', attachment.name, attachment.size);
         const uploadRes = await fetch('/api/User/upload-attachment', {
           method: 'POST',
           body: formData,
         });
 
         if (!uploadRes.ok) {
-          console.error('Attachment upload failed', uploadRes.statusText);
           return false;
         }
 
@@ -259,9 +239,7 @@ export default function ChatComponent({ currentUser }: any) {
           typeof uploadData === 'string'
             ? uploadData
             : uploadData.attachmentUrl || uploadData.fileUrl || uploadData.url || uploadData.path || uploadData.message || null;
-        console.debug('attachment uploaded, url=', attachmentUrl);
       } catch (err) {
-        console.error('Attachment upload error', err);
         return false;
       }
     }
@@ -287,18 +265,15 @@ export default function ChatComponent({ currentUser }: any) {
         ? Number(selectedConv.otherUser.id)
         : selectedConv.otherUser.id;
 
-      console.debug('invoking SendMessage', { to: receiverId, text: inputText.trim(), attachmentUrl });
       await connection.invoke(
         'SendMessage',
         receiverId,
         inputText.trim() || attachment?.name || '',
         attachmentUrl
       );
-      console.debug('SendMessage invoked');
       setInputText('');
       return true;
     } catch (e) {
-      console.error('Send Error', e);
       pendingRef.current = pendingRef.current.filter((p) => p.localId !== optimisticMessage.id);
       return false;
     }
@@ -306,13 +281,13 @@ export default function ChatComponent({ currentUser }: any) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] h-[calc(100vh-120px)] min-h-[500px] shadow-2xl rounded-3xl overflow-hidden border border-slate-200 bg-white">
-      <Chatside 
-        conversations={conversations} 
+      <Chatside
+        conversations={conversations}
         selectedId={selectedConv?.otherUser.id}
         onSelect={handleOpenConv}
         isOnline={isOnline}
       />
-      <ChatArea 
+      <ChatArea
         selectedConv={selectedConv}
         messages={messages}
         currentUserId={currentUserId}

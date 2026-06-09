@@ -15,12 +15,6 @@ export const registerServices = async (
     formData.append("Role", role === "client" ? "Client" : "Freelancer");
     formData.append("PhoneNumber", data.phoneNumber);
 
-    // Log the form data entries for debugging
-    console.log("Sending FormData:");
-    Array.from(formData.entries()).forEach(([key, value]) => {
-      console.log(`${key}: ${value}`);
-    });
-
     const res = await fetch(
       `${API_BASE_URL}/api/User/register`,
       {
@@ -30,9 +24,7 @@ export const registerServices = async (
     );
 
     const result = await res.json();
-    
-    console.log("Registration response:", result);
-    
+
     if (!res.ok) {
       // Handle validation errors
       if (res.status === 400 && result.errors) {

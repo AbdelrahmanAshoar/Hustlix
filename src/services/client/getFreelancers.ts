@@ -27,16 +27,16 @@ export type GetFreelancersResponse = {
 // Utility function to get token from cookies
 function getTokenFromCookie(): string | null {
   if (typeof document === "undefined") return null;
-  
+
   const cookieString = document.cookie;
   const cookies = cookieString.split(';').map(c => c.trim());
-  
+
   for (const cookie of cookies) {
     if (cookie.startsWith('token=')) {
       return cookie.substring(6); // Remove 'token=' prefix
     }
   }
-  
+
   return null;
 }
 
@@ -71,33 +71,30 @@ export async function getFreelancers(
     });
 
     if (!res.ok) {
-      console.error(`❌ Failed to fetch freelancers: ${res.status} ${res.statusText}`);
-      
+
       // Try to get error message from response
       try {
         const errorData = await res.json();
-        console.error("❌ Error response:", errorData);
       } catch {
         console.error("❌ Could not parse error response");
       }
-      
+
       throw new Error(`API request failed with status ${res.status}`);
     }
 
     const data = await res.json();
-    
+
     // API returns array directly, wrap it in object with data property
     // Fix profile picture URLs to include full backend URL
     const fixedData = data.map((freelancer: TalentProfile) => ({
       ...freelancer,
-      profilePictureUrl: freelancer.profilePictureUrl 
-        ? `${API_BASE_URL}${freelancer.profilePictureUrl}` 
+      profilePictureUrl: freelancer.profilePictureUrl
+        ? `${API_BASE_URL}${freelancer.profilePictureUrl}`
         : null
     }));
-    
+
     return { data: fixedData };
   } catch (error) {
-    console.error("❌ Error fetching freelancers:", error);
     throw error;
   }
 }

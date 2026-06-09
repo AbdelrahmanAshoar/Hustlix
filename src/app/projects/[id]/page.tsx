@@ -19,7 +19,7 @@ import { ProposalData } from "@/app/services/types/freelancer";
 export default function ProjectDetailsPage() {
   const params = useParams();
   const projectId = parseInt(params.id as string);
-  
+
   const [project, setProject] = useState<ProjectData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,10 +45,8 @@ export default function ProjectDetailsPage() {
     setError(null);
     try {
       const data = await getProjectByID(projectId);
-      console.log("Project details:", data);
       setProject(data);
     } catch (err: any) {
-      console.error("Error fetching project:", err);
       setError(err.message || "Failed to load project details");
       toast.error(err.message || "Failed to load project details");
     } finally {
@@ -74,7 +72,7 @@ export default function ProjectDetailsPage() {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
     return date.toLocaleDateString();
@@ -206,11 +204,10 @@ export default function ProjectDetailsPage() {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`h-5 w-5 ${
-                          i < Math.floor(project.clientRating || 0)
+                        className={`h-5 w-5 ${i < Math.floor(project.clientRating || 0)
                             ? "fill-yellow-400 text-yellow-400"
                             : "text-gray-300"
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>
@@ -287,16 +284,16 @@ export default function ProjectDetailsPage() {
                 <div className="flex flex-col items-end gap-2">
                   {project.status === "Open" && (
                     !existingProposal ? (
-                      <Link 
-                        href={`/projects/addProposals/${project.id}`} 
+                      <Link
+                        href={`/projects/addProposals/${project.id}`}
                         className="py-2 px-4 text-white inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-green-600 hover:bg-green-700"
                       >
                         Submit a Proposal
                         <Zap className="h-4 w-4" />
                       </Link>
                     ) : (
-                      <Link 
-                        href={`/projects/edit-proposal/${project.id}`} 
+                      <Link
+                        href={`/projects/edit-proposal/${project.id}`}
                         className="py-2 px-4 text-white inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-blue-600 hover:bg-blue-700"
                       >
                         Edit Proposal
@@ -304,7 +301,7 @@ export default function ProjectDetailsPage() {
                       </Link>
                     )
                   )}
-                  
+
                   {/* Show existing proposal info if available */}
                   {existingProposal && !isCheckingProposal && (
                     <div className="text-right text-sm">
@@ -316,7 +313,7 @@ export default function ProjectDetailsPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Show checking proposal state */}
                   {isCheckingProposal && (
                     <div className="text-right text-sm text-gray-500">
