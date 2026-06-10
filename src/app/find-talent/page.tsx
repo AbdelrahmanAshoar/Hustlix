@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getFreelancers, type TalentProfile } from "@/services/client/getFreelancers";
 import FindTalentHero from "@/components/findTalent/FindTalentHero";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 const PAGE_SIZE = 6;
 
 export default function FindTalentPage() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [talent, setTalent] = useState<TalentProfile[]>([]);
@@ -34,6 +36,12 @@ export default function FindTalentPage() {
       setIsLoading(false);
     }
   }, [search, page]);
+
+  useEffect(() => {
+    const query = searchParams.get('search') || '';
+    setSearch(query);
+    setPage(1);
+  }, [searchParams]);
 
   useEffect(() => {
     void fetchTalent();

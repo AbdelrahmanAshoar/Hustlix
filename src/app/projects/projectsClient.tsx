@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +17,8 @@ import { ProjectData } from "../services/types/freelancer";
 import Link from "next/link";
 
 export default function ProjectsClient({ data }: { data: ProjectData[] }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,6 +28,16 @@ export default function ProjectsClient({ data }: { data: ProjectData[] }) {
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  useEffect(() => {
+    const query = searchParams.get('search') || '';
+    setSearchTerm(query);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const search = searchTerm.trim();
+    router.replace(search ? `/projects?search=${encodeURIComponent(search)}` : '/projects');
+  }, [searchTerm, router]);
 
   // Get unique categories from projects for filter
   const categories = Array.from(

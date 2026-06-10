@@ -1,10 +1,37 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { DollarSign, Users, Activity, Settings, AlertCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
+"use client";
+
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { DollarSign, Users, Activity, Settings, AlertCircle, Sparkles, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+
+type MatchingStatus = "idle" | "loading" | "success" | "error";
 
 export default function AdminDashboard() {
+  const [matchingStatus, setMatchingStatus] = useState<MatchingStatus>("idle");
+  const [matchingMessage, setMatchingMessage] = useState<string>("");
+
+  const handleRunAiMatching = async () => {
+    setMatchingStatus("loading");
+    setMatchingMessage("");
+    try {
+      const res = await fetch("/api/admin/run-ai-matching", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMatchingStatus("success");
+        setMatchingMessage(data.message || "AI matching completed successfully.");
+      } else {
+        setMatchingStatus("error");
+        setMatchingMessage(data.message || "AI matching failed. Please try again.");
+      }
+    } catch {
+      setMatchingStatus("error");
+      setMatchingMessage("Network error. Could not reach the server.");
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -68,17 +95,17 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-               {[
-                 { name: "Alice J.", role: "Freelancer", time: "10 mins ago" },
-                 { name: "TechNova Solutions", role: "Client", time: "1 hour ago" },
-                 { name: "Mike R.", role: "Freelancer", time: "2 hours ago" },
-               ].map((user, i) => (
+              {[
+                { name: "Alice J.", role: "Freelancer", time: "10 mins ago" },
+                { name: "TechNova Solutions", role: "Client", time: "1 hour ago" },
+                { name: "Mike R.", role: "Freelancer", time: "2 hours ago" },
+              ].map((user, i) => (
                 <div key={i} className="flex justify-between items-center p-3 border-b last:border-0 hover:bg-muted/50 transition-colors rounded-md cursor-pointer">
                   <div>
                     <h4 className="font-semibold text-sm">{user.name}</h4>
                     <p className="text-xs text-muted-foreground">{user.time}</p>
                   </div>
-                  <Badge variant={user.role === 'Client' ? 'secondary' : 'default'} className="text-[10px] uppercase">
+                  <Badge variant={user.role === "Client" ? "secondary" : "default"} className="text-[10px] uppercase">
                     {user.role}
                   </Badge>
                 </div>
@@ -90,8 +117,8 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>System Settings & Quick Actions</CardTitle>
-            <CardDescription>Configure platform fees and CMS integration.</CardDescription>
+            <CardTitle>System Settings &amp; Quick Actions</CardTitle>
+            <CardDescription>Configure platform fees, AI matching, and CMS integration.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -112,6 +139,50 @@ export default function AdminDashboard() {
               <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" />
                 <span className="text-sm">System Logs</span>
+              </Button>
+            </div>
+
+            {/* AI Matching Section */}
+            <div className="mt-2 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-blue-600" />
+                <p className="text-sm font-semibold text-blue-900">AI Freelancer Matching</p>
+              </div>
+              <p className="text-xs text-blue-700/80 leading-relaxed">
+                Runs the AI engine to match subscribed freelancers with relevant projects based on their skills and profile.
+              </p>
+
+              {/* Status feedback */}
+              {matchingStatus === "success" && (
+                <div className="flex items-start gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                  <p className="text-xs text-green-700">{matchingMessage}</p>
+                </div>
+              )}
+              {matchingStatus === "error" && (
+                <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+                  <XCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                  <p className="text-xs text-red-600">{matchingMessage}</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleRunAiMatching}
+                disabled={matchingStatus === "loading"}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                size="sm"
+              >
+                {matchingStatus === "loading" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Running AI Matching...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Run AI Matching
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>

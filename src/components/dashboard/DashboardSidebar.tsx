@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { normalizeImageUrl } from '@/lib/imageUrl';
 import type { User } from '@/contexts/AuthContext';
 import logo from '@/assets/images/Hustlix.png';
 import {
@@ -113,7 +114,11 @@ export default function DashboardSidebar({
       <div className="border-t p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.profilePictureUrl || ''} alt={user?.fullName} />
+            <AvatarImage
+              key={normalizeImageUrl(user?.profilePictureUrl)}
+              src={normalizeImageUrl(user?.profilePictureUrl)}
+              alt={user?.fullName}
+            />
             <AvatarFallback className="bg-primary/10 text-primary">{getInitials(user?.fullName)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">

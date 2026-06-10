@@ -2,40 +2,39 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { API_BASE_URL } from '@/config';
-import Chatside from './ChatSide';
+import { getAuthToken, type User } from '@/contexts/AuthContext';import { apiFetch } from '@/lib/apiFetch';import Chatside from './ChatSide';
 import ChatArea from './ChatArea';
+import type { ChatMessage, Conversation, UploadAttachmentResponse } from './types';
 
-// Helper لقراءة الكوكيز وفك التوكن
-const getCookie = (name: string) => {
-  if (typeof document === 'undefined') return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift();
-  return null;
-};
-
+// Helper لقراءة التوكن من AuthContext
 const getUserIdFromToken = (token: string) => {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.Id || payload.sub || payload.nameid;
-  } catch (e) { return null; }
+  } catch {
+    return null;
+  }
 };
 
-export default function ChatComponent({ currentUser }: any) {
+type ChatComponentProps = {
+  currentUser?: User | null;
+};
+
+export default function ChatComponent({ currentUser }: ChatComponentProps) {
   const [authToken, setAuthToken] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [connection, setConnection] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | number | null>(null);
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
   const [isOnline, setIsOnline] = useState(false);
-  const [conversations, setConversations] = useState([]);
-  const [selectedConv, setSelectedConv] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [initialUserId, setInitialUserId] = useState<string | number | null>(null);
   const pendingRef = useRef<{ key: string; localId: string }[]>([]);
   const [inputText, setInputText] = useState('');
 
   // Refs for stable access inside SignalR handlers (avoid stale closures)
-  const currentUserIdRef = useRef<string | null>(null);
-  const selectedConvRef = useRef<any>(null);
+  const currentUserIdRef = useRef<string | number | null>(null);
+  const selectedConvRef = useRef<Conversation | null>(null);
 
   // Keep refs in sync with state
   useEffect(() => { currentUserIdRef.current = currentUserId; }, [currentUserId]);
@@ -43,7 +42,7 @@ export default function ChatComponent({ currentUser }: any) {
 
 
   useEffect(() => {
-    const token = getCookie('token');
+    const token = getAuthToken();
     if (token) {
       setAuthToken(token);
       const tokenUserId = getUserIdFromToken(token);
@@ -65,29 +64,25 @@ export default function ChatComponent({ currentUser }: any) {
     }
   }, [currentUser]);
 
-  const apiCall = useCallback(async (method: string, url: string, body?: any) => {
-    if (!authToken) return;
-    const res = await fetch(`${API_BASE_URL}${url}`, {
-      method,
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    return res.json();
-  }, [authToken]);
+  const apiCall = useCallback(async <T = unknown>(method: string, url: string, body?: unknown): Promise<T | null> => {
+    try {
+      return await apiFetch<T>(url, { method, body });
+    } catch (error) {
+      console.error('Chat API error:', error);
+      return null;
+    }
+  }, []);
 
   // Stable loadConvs function that does NOT depend on selectedConv
   // This prevents the infinite re-render loop
   const loadConvs = useCallback(async () => {
-    const data = await apiCall('GET', '/api/User/my-conversations');
-    if (data) {
-      setConversations((prevConversations: any) => {
+    const data = await apiCall<Conversation[]>('GET', '/api/User/my-conversations');
+    if (data && Array.isArray(data)) {
+      setConversations((prevConversations) => {
         const currentSelectedConv = selectedConvRef.current;
         let finalData = data;
         if (currentSelectedConv?.otherUser?.id) {
-          const exists = data.some((conv: any) => String(conv.otherUser.id) === String(currentSelectedConv.otherUser.id));
+          const exists = data.some((conv) => String(conv.otherUser.id) === String(currentSelectedConv.otherUser.id));
           if (!exists) {
             finalData = [currentSelectedConv, ...data];
           }
@@ -98,11 +93,45 @@ export default function ChatComponent({ currentUser }: any) {
     return data;
   }, [apiCall]); // Only depends on apiCall (which depends on authToken)
 
-  const normalizeServerMessage = (msg: any) => {
-    if (!msg) return msg;
-    const attachmentUrl = msg.attachmentUrl || msg.fileUrl || msg.url || msg.path || msg.attachment || (msg.file && msg.file.url) || null;
-    const attachmentName = msg.attachmentName || msg.fileName || msg.name || (msg.file && msg.file.name) || null;
-    return { ...msg, attachmentUrl, attachmentName };
+  const normalizeServerMessage = (msg: unknown): ChatMessage => {
+    if (!msg || typeof msg !== 'object') {
+      return {
+        id: `server-${Date.now()}`,
+        senderId: '',
+        message: '',
+        sentAt: new Date().toISOString(),
+      };
+    }
+
+    const typedMsg = msg as Record<string, unknown>;
+    const getStringValue = (value: unknown): string | undefined =>
+      typeof value === 'string' ? value : undefined;
+
+    const attachmentUrl =
+      getStringValue(typedMsg.attachmentUrl) ||
+      getStringValue(typedMsg.fileUrl) ||
+      getStringValue(typedMsg.url) ||
+      getStringValue(typedMsg.path) ||
+      getStringValue(typedMsg.attachment) ||
+      getStringValue((typedMsg.file as Record<string, unknown>)?.url) ||
+      null;
+
+    const attachmentName =
+      getStringValue(typedMsg.attachmentName) ||
+      getStringValue(typedMsg.fileName) ||
+      getStringValue(typedMsg.name) ||
+      getStringValue((typedMsg.file as Record<string, unknown>)?.name) ||
+      null;
+
+    return {
+      id: getStringValue(typedMsg.id) ?? `server-${Date.now()}`,
+      senderId: typedMsg.senderId ?? '',
+      receiverId: typedMsg.receiverId,
+      message: getStringValue(typedMsg.message) ?? '',
+      sentAt: getStringValue(typedMsg.sentAt) ?? new Date().toISOString(),
+      attachmentUrl,
+      attachmentName,
+    };
   };
 
   // SignalR connection setup - only depends on authToken and loadConvs
@@ -117,7 +146,7 @@ export default function ChatComponent({ currentUser }: any) {
       .withAutomaticReconnect()
       .build();
 
-    const appendMessageOnce = (msg: any) => {
+    const appendMessageOnce = (msg: unknown) => {
       const normalized = normalizeServerMessage(msg);
 
       // Try to match pending optimistic messages by sender_receiver_message
@@ -126,12 +155,12 @@ export default function ChatComponent({ currentUser }: any) {
       if (pendingIndex >= 0) {
         const { localId } = pendingRef.current[pendingIndex];
         pendingRef.current.splice(pendingIndex, 1);
-        setMessages((msgs: any) => msgs.map((m: any) => m.id === localId ? { ...normalized, isLocal: false } : m));
+        setMessages((msgs) => msgs.map((m) => m.id === localId ? { ...normalized, isLocal: false } : m));
         return;
       }
 
-      setMessages((msgs: any) => {
-        const alreadyExists = msgs.some((existing: any) =>
+      setMessages((msgs) => {
+        const alreadyExists = msgs.some((existing) =>
           existing.senderId === normalized.senderId &&
           existing.receiverId === normalized.receiverId &&
           existing.message === normalized.message
@@ -179,9 +208,12 @@ export default function ChatComponent({ currentUser }: any) {
     return () => { newConnection.stop(); };
   }, [authToken, loadConvs]);
 
-  const handleOpenConv = useCallback(async (conv: any) => {
+  const handleOpenConv = useCallback(async (conv: Conversation) => {
     setSelectedConv(conv);
-    const data = await apiCall('GET', `/api/User/conversation-with/${conv.otherUser.id}`);
+    const data = await apiCall<ChatMessage[]>(
+      'GET',
+      `/api/User/conversation-with/${conv.otherUser.id}`
+    );
     if (data) setMessages(data);
   }, [apiCall]);
 
@@ -189,7 +221,9 @@ export default function ChatComponent({ currentUser }: any) {
     if (!initialUserId || !authToken) return;
     if (selectedConv?.otherUser?.id === initialUserId) return;
 
-    const matchedConv = conversations.find((conv: any) => String(conv.otherUser.id) === String(initialUserId));
+    const matchedConv = conversations.find(
+      (conv) => String(conv.otherUser.id) === String(initialUserId)
+    );
     if (matchedConv) {
       void handleOpenConv(matchedConv);
       return;
@@ -197,7 +231,7 @@ export default function ChatComponent({ currentUser }: any) {
 
     const openDirectConv = async () => {
       // Open a silent placeholder (no name shown) while we fetch real data
-      const placeholderConv = {
+      const placeholderConv: Conversation = {
         otherUser: {
           id: initialUserId,
           fullName: '',
@@ -205,11 +239,16 @@ export default function ChatComponent({ currentUser }: any) {
         },
       };
       setSelectedConv(placeholderConv);
-      setConversations((prev: any) => {
-        const exists = prev.some((conv: any) => String(conv.otherUser.id) === String(initialUserId));
+      setConversations((prev) => {
+        const exists = prev.some(
+          (conv) => String(conv.otherUser.id) === String(initialUserId)
+        );
         return exists ? prev : [placeholderConv, ...prev];
       });
-      const data = await apiCall('GET', `/api/User/conversation-with/${initialUserId}`);
+      const data = await apiCall<ChatMessage[]>(
+        'GET',
+        `/api/User/conversation-with/${initialUserId}`
+      );
       if (data) setMessages(data);
     };
 
@@ -225,21 +264,20 @@ export default function ChatComponent({ currentUser }: any) {
         const formData = new FormData();
         formData.append('file', attachment);
 
-        const uploadRes = await fetch('/api/User/upload-attachment', {
-          method: 'POST',
-          body: formData,
-        });
+        try {
+          const uploadData = await apiFetch<UploadAttachmentResponse | string>('/api/User/upload-attachment', {
+            method: 'POST',
+            body: formData,
+          });
 
-        if (!uploadRes.ok) {
+          attachmentUrl =
+            typeof uploadData === 'string'
+              ? uploadData
+              : uploadData.attachmentUrl || uploadData.fileUrl || uploadData.url || uploadData.path || uploadData.message || null;
+        } catch (uploadError) {
           return false;
         }
-
-        const uploadData = await uploadRes.json();
-        attachmentUrl =
-          typeof uploadData === 'string'
-            ? uploadData
-            : uploadData.attachmentUrl || uploadData.fileUrl || uploadData.url || uploadData.path || uploadData.message || null;
-      } catch (err) {
+      } catch {
         return false;
       }
     }
@@ -258,7 +296,7 @@ export default function ChatComponent({ currentUser }: any) {
     };
     const key = `${optimisticMessage.senderId}_${optimisticMessage.receiverId}_${optimisticMessage.message}`;
     pendingRef.current.push({ key, localId: optimisticMessage.id });
-    setMessages((m: any) => [...m, optimisticMessage]);
+setMessages((m) => [...m, optimisticMessage]);
 
     try {
       const receiverId = !isNaN(Number(selectedConv.otherUser.id))
@@ -273,7 +311,7 @@ export default function ChatComponent({ currentUser }: any) {
       );
       setInputText('');
       return true;
-    } catch (e) {
+    } catch {
       pendingRef.current = pendingRef.current.filter((p) => p.localId !== optimisticMessage.id);
       return false;
     }

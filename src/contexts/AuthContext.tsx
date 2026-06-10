@@ -26,6 +26,18 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
+const TOKEN_COOKIE_NAME = 'token';
+
+const getCookie = (name: string) => {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+};
+
+export const getAuthToken = (): string | null => getCookie(TOKEN_COOKIE_NAME);
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,14 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check for existing session on mount
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-      return null;
-    };
-
-    const storedToken = getCookie('token');
+    const storedToken = getAuthToken();
     const storedUser = localStorage.getItem('user');
     
     if (storedToken && storedUser) {
@@ -63,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
     
     // Store in cookie for middleware/API routes
-    document.cookie = `token=${newToken}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+    document.cookie = `${TOKEN_COOKIE_NAME}=${newToken}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
     
     // Store user in localStorage for persistence
     localStorage.setItem('user', JSON.stringify(userData));
@@ -87,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     
     // Clear cookie
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = `${TOKEN_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
     
     // Clear localStorage
     localStorage.removeItem('user');

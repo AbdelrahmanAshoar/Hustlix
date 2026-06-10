@@ -3,6 +3,7 @@ import OverviewTab from "./OverviewTab";
 import PortfolioTab from "./PortfolioTab";
 import HiringHistoryTab from "./HiringHistoryTab";
 import ReviewsTab from "./ReviewsTab";
+import SkillAnalysisCard from "./SkillAnalysisCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { Code2 } from "lucide-react";
 
@@ -10,6 +11,10 @@ export default function ProfileTabs({ data, tab, setTab }) {
   const { userRole } = useAuth();
   const [skillsFromApi, setSkillsFromApi] = useState([]);
   const [skillsLoading, setSkillsLoading] = useState(false);
+
+  // Skill analysis state
+  const [analysis, setAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   const localSkills = useMemo(() => {
     if (!Array.isArray(data?.professionalInfo?.skills)) return [];
@@ -21,6 +26,7 @@ export default function ProfileTabs({ data, tab, setTab }) {
     }));
   }, [data?.professionalInfo?.skills]);
 
+  // Fetch raw skills list
   useEffect(() => {
     let mounted = true;
     if (userRole !== "Freelancer") return;
@@ -69,6 +75,34 @@ export default function ProfileTabs({ data, tab, setTab }) {
     };
   }, [userRole]);
 
+  // Fetch skill analysis
+  useEffect(() => {
+    let mounted = true;
+    if (userRole !== "Freelancer") return;
+
+    const fetchAnalysis = async () => {
+      setAnalysisLoading(true);
+      try {
+        const res = await fetch("/api/Freelancer/analyze-skills", { cache: "no-store" });
+        if (!res.ok) {
+          if (mounted) setAnalysis(null);
+          return;
+        }
+        const payload = await res.json();
+        if (mounted) setAnalysis(payload ?? null);
+      } catch {
+        if (mounted) setAnalysis(null);
+      } finally {
+        if (mounted) setAnalysisLoading(false);
+      }
+    };
+
+    fetchAnalysis();
+    return () => {
+      mounted = false;
+    };
+  }, [userRole]);
+
   const skills = skillsFromApi.length > 0 ? skillsFromApi : localSkills;
 
   const tabs = ["overview", "reviews"];
@@ -110,7 +144,13 @@ export default function ProfileTabs({ data, tab, setTab }) {
         </div>
 
         {userRole === "Freelancer" && (
-          <aside className="self-start lg:sticky lg:top-20">
+          <aside className="self-start lg:sticky lg:top-20 space-y-4">
+            {/* Skill Analysis Card */}
+            <div className="bg-white rounded-2xl border border-blue-50 shadow-sm p-5">
+              <SkillAnalysisCard analysis={analysis} loading={analysisLoading} />
+            </div>
+
+            {/* Raw Skills Panel */}
             <div className="bg-white rounded-2xl border border-blue-50 shadow-sm p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Code2 className="w-4 h-4 text-blue-600" />

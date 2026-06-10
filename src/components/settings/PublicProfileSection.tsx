@@ -112,6 +112,7 @@ export default function PublicProfileSection({
             <div className="group relative">
               <div className="mx-auto h-48 w-48 overflow-hidden rounded-full border-2 border-border">
                 <Image
+                  key={getImageSrc(formData.profilePictureUrl)}
                   src={getImageSrc(formData.profilePictureUrl) || "/default.png"}
                   alt="Profile picture"
                   width={192}

@@ -2,21 +2,11 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { normalizeImageUrl } from '@/lib/imageUrl';
-
-interface ChatUser {
-  id: string;
-  fullName?: string;
-  profilePictureUrl?: string | null;
-}
-
-interface Conversation {
-  otherUser: ChatUser;
-  lastMessage?: string;
-}
+import type { Conversation } from './types';
 
 interface ChatsideProps {
   conversations: Conversation[];
-  selectedId: string | null;
+  selectedId: string | number | null;
   onSelect: (conversation: Conversation) => void;
   isOnline: boolean;
 }

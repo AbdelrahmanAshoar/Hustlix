@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Settings,
   Shield,
+  Sparkles,
   Star,
   Users,
   BarChart3,
@@ -49,6 +50,7 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     { name: 'User Management', href: '/dashboard/admin/users', icon: Users },
     { name: 'Analytics', href: '/dashboard/admin/analytics', icon: BarChart3 },
     { name: 'Disputes', href: '/dashboard/admin/disputes', icon: AlertCircle },
+    { name: 'AI Matching', href: '/dashboard/admin', icon: Sparkles, badge: 'AI' },
     { name: 'System Settings', href: '/dashboard/admin/system', icon: Shield },
   ],
   Client: [
@@ -60,6 +62,7 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
   Freelancer: [
     { name: 'Dashboard', href: '/dashboard/freelancer', icon: LayoutDashboard },
     { name: 'Available Projects', href: '/projects', icon: Briefcase },
+    { name: 'AI Matched Projects', href: '/dashboard/freelancer/suggested-projects', icon: Sparkles, badge: 'AI' },
     { name: 'My Applications', href: '/dashboard/freelancer/applications', icon: FileText },
     { name: 'Active Projects', href: '/dashboard/freelancer/active-projects', icon: Calendar },
     { name: 'Earnings', href: '/dashboard/freelancer/earnings', icon: DollarSign },

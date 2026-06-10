@@ -2,25 +2,9 @@
 import Image from 'next/image';
 import { useRef, useEffect, useState, useCallback, type ChangeEvent } from 'react';
 import { Send, Paperclip, MoreVertical, X } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { normalizeImageUrl } from "@/lib/imageUrl";
-
-interface ChatMessage {
-  senderId: string | number;
-  message: string;
-  sentAt: string;
-  attachmentUrl?: string;
-  attachmentName?: string;
-}
-
-interface UserProfile {
-  fullName?: string;
-  profilePictureUrl?: string | null;
-}
-
-interface Conversation {
-  otherUser: UserProfile & { id: string | number };
-}
+import { Button } from '@/components/ui/button';
+import { normalizeImageUrl } from '@/lib/imageUrl';
+import type { ChatMessage, Conversation } from './types';
 
 interface ChatAreaProps {
   selectedConv: Conversation | null;

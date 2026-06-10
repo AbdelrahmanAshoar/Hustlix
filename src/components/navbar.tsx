@@ -2,9 +2,12 @@
 "use client";
 
 import Link from 'next/link';
+import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Search, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { normalizeImageUrl } from '@/lib/imageUrl';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +21,9 @@ import Image from 'next/image';
 import logo from "@/assets/images/Hustlix.png";
 export function Navbar() {
   const { isAuthenticated, user, userRole, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [searchValue, setSearchValue] = useState('');
 
   // Get user initials for avatar fallback
   const getInitials = () => {
@@ -63,9 +69,30 @@ export function Navbar() {
         {userRole !== 'Admin' && (
           <div className="hidden md:flex flex-1 max-w-sm mx-6 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input 
-              type="text" 
-              placeholder="Search skills, freelancers, projects..." 
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const query = searchValue.trim();
+                  const searchRoute =
+                    userRole === 'Client'
+                      ? '/find-talent'
+                      : '/projects';
+                  router.push(
+                    query
+                      ? `${searchRoute}?search=${encodeURIComponent(query)}`
+                      : searchRoute
+                  );
+                }
+              }}
+              placeholder={
+                userRole === 'Client'
+                  ? 'Search freelancers, skills, projects...'
+                  : 'Search projects, skills, freelancers...'
+              }
               className="w-full h-10 pl-9 pr-4 rounded-full bg-muted/50 border-none focus:ring-2 focus:ring-primary focus:outline-none text-sm transition-all"
             />
           </div>
@@ -90,7 +117,11 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.profilePictureUrl || ''} alt={user?.fullName} />
+                    <AvatarImage
+                      key={normalizeImageUrl(user?.profilePictureUrl)}
+                      src={normalizeImageUrl(user?.profilePictureUrl)}
+                      alt={user?.fullName}
+                    />
                     <AvatarFallback className="bg-primary/10 text-primary">
                       {getInitials()}
                     </AvatarFallback>

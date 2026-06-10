@@ -151,62 +151,60 @@ export default function SettingsPage() {
     }
   };
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const token = getCookie("token");
-      if (!token) return;
+  const loadUserProfile = useCallback(async () => {
+    const token = getCookie("token");
+    if (!token) return;
 
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/User/my-profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        const data = await res.json();
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/User/my-profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      const data = await res.json();
 
-        const photo = data?.personalInfo?.photoUrl;
-        setFormData((prev) => ({
-          ...prev,
-          fullName: data.personalInfo?.fullName ?? prev.fullName,
-          phoneNumber: data.personalInfo?.phone ?? prev.phoneNumber,
-          bio: data.professionalInfo?.about ?? prev.bio,
-          profilePictureUrl: photo ?? prev.profilePictureUrl,
-        }));
+      const photo = data?.personalInfo?.photoUrl;
+      const normalizedPhoto = photo ? normalizeImageUrl(photo) : normalizeImageUrl(user?.profilePictureUrl);
 
-        setAddress(data.personalInfo?.address ?? "");
-        setEmail(data.auth?.email ?? "");
-        const fetchedRole = data.auth?.userRole ?? "";
-        setUserRole(fetchedRole);
-
-        setJobTitle(data.professionalInfo?.jobTitle ?? "");
-        setPayPalEmail(data.professionalInfo?.payPalEmail ?? "");
-        setCvFile(data.professionalInfo?.cvFile ?? "");
-        setSkills(data.professionalInfo?.skills ?? []);
-
-        setMainLink(data.portfolio?.mainLink ?? "");
-        setProjects(data.portfolio?.projects ?? []);
-        setProfileProgress(data.profileProgress ?? 0);
-
-        if (fetchedRole === "Freelancer") {
-          await fetchFreelancerSkills();
-        } else {
-          setSkills([]);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchProfile();
-    if (user) {
       setFormData((prev) => ({
         ...prev,
-        fullName: user.fullName || "",
-        phoneNumber: user.phoneNumber || "",
-        bio: user.bio || "",
-        profilePictureUrl: normalizeImageUrl(user.profilePictureUrl),
+        fullName: data.personalInfo?.fullName ?? prev.fullName,
+        phoneNumber: data.personalInfo?.phone ?? prev.phoneNumber,
+        bio: data.professionalInfo?.about ?? prev.bio,
+        profilePictureUrl: normalizedPhoto,
       }));
+
+      setAddress(data.personalInfo?.address ?? "");
+      setEmail(data.auth?.email ?? "");
+      const fetchedRole = data.auth?.userRole ?? "";
+      setUserRole(fetchedRole);
+
+      setJobTitle(data.professionalInfo?.jobTitle ?? "");
+      setPayPalEmail(data.professionalInfo?.payPalEmail ?? "");
+      setCvFile(data.professionalInfo?.cvFile ?? "");
+      setSkills(data.professionalInfo?.skills ?? []);
+
+      setMainLink(data.portfolio?.mainLink ?? "");
+      setProjects(data.portfolio?.projects ?? []);
+      setProfileProgress(data.profileProgress ?? 0);
+
+      updateUser({
+        fullName: data.personalInfo?.fullName ?? user?.fullName ?? "",
+        profilePictureUrl: normalizedPhoto,
+      });
+
+      if (fetchedRole === "Freelancer") {
+        await fetchFreelancerSkills();
+      } else {
+        setSkills([]);
+      }
+    } catch (error) {
+      console.error(error);
     }
-  }, [user, fetchFreelancerSkills]);
+  }, [fetchFreelancerSkills, updateUser, user]);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, [loadUserProfile]);
 
   useEffect(() => {
     if (!isFreelancer && (activeTab === "professional" || activeTab === "portfolio")) {
@@ -234,6 +232,24 @@ export default function SettingsPage() {
     const previewUrl = URL.createObjectURL(file);
     setFormData((prev) => ({ ...prev, profilePictureUrl: previewUrl }));
     toast.info("Press 'Update profile' to save your new photo.");
+  };
+
+  const getUpdatedProfilePictureUrl = (result: any) => {
+    const photoValue =
+      result?.profilePictureUrl ??
+      result?.photoUrl ??
+      result?.data?.profilePictureUrl ??
+      result?.data?.photoUrl;
+    const photoSource = photoValue ?? user?.profilePictureUrl;
+    if (!photoSource) return "";
+
+    const normalizedUrl = normalizeImageUrl(photoSource);
+    if (!normalizedUrl || normalizedUrl.startsWith("data:image") || normalizedUrl.startsWith("blob:")) {
+      return normalizedUrl;
+    }
+
+    const separator = normalizedUrl.includes("?") ? "&" : "?";
+    return `${normalizedUrl}${separator}t=${Date.now()}`;
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -281,15 +297,17 @@ export default function SettingsPage() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result?.message || "Update failed");
 
-      const newPhotoUrl = normalizeImageUrl(result?.profilePictureUrl || user?.profilePictureUrl);
+      const newPhotoUrl = getUpdatedProfilePictureUrl(result);
       updateUser({
         fullName: formData.fullName,
         profilePictureUrl: newPhotoUrl,
       });
+      setFormData((prev) => ({
+        ...prev,
+        profilePictureUrl: newPhotoUrl,
+      }));
 
-      if (isFreelancer) {
-        await fetchFreelancerSkills();
-      }
+      await loadUserProfile();
       toast.success("Profile updated successfully");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Error";
