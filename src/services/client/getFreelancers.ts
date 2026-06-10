@@ -43,6 +43,10 @@ function getTokenFromCookie(): string | null {
 export async function getFreelancers(
   params: Partial<{
     search: string;
+    name: string;
+    jobTitle: string;
+    skills: string;
+    location: string;
     page: number;
     limit: number;
   }> = {}
@@ -50,6 +54,10 @@ export async function getFreelancers(
   const searchParams = new URLSearchParams();
 
   if (params.search) searchParams.set("search", params.search);
+  if (params.name) searchParams.set("name", params.name);
+  if (params.jobTitle) searchParams.set("jobTitle", params.jobTitle);
+  if (params.skills) searchParams.set("skills", params.skills);
+  if (params.location) searchParams.set("location", params.location);
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
 

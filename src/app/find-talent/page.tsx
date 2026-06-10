@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getFreelancers, type TalentProfile } from "@/services/client/getFreelancers";
@@ -13,35 +13,56 @@ const PAGE_SIZE = 6;
 
 export default function FindTalentPage() {
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [talent, setTalent] = useState<TalentProfile[]>([]);
   const [featuredFreelancers, setFeaturedFreelancers] = useState<TalentProfile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFeaturedLoading, setIsFeaturedLoading] = useState(false);
+  const talentSectionRef = useRef<HTMLDivElement>(null);
+  
+  const [filters, setFilters] = useState({
+    name: "",
+    jobTitle: "",
+    skills: "",
+    location: "",
+  });
+
+  // Initialize filters from URL search parameters
+  useEffect(() => {
+    const name = searchParams.get('name') || '';
+    const jobTitle = searchParams.get('jobTitle') || '';
+    const skills = searchParams.get('skills') || '';
+    const location = searchParams.get('location') || '';
+    
+    setFilters({
+      name,
+      jobTitle,
+      skills,
+      location,
+    });
+    setPage(1);
+  }, [searchParams]);
+
   const fetchTalent = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await getFreelancers({
-        search: search || undefined,
+        name: filters.name || undefined,
+        jobTitle: filters.jobTitle || undefined,
+        skills: filters.skills || undefined,
+        location: filters.location || undefined,
         page,
         limit: PAGE_SIZE,
       });
 
       setTalent(response?.data ?? []);
-    } catch (error) {
+    } catch {
       toast.error("Unable to load talent. Please try again.");
       setTalent([]);
     } finally {
       setIsLoading(false);
     }
-  }, [search, page]);
-
-  useEffect(() => {
-    const query = searchParams.get('search') || '';
-    setSearch(query);
-    setPage(1);
-  }, [searchParams]);
+  }, [filters, page]);
 
   useEffect(() => {
     void fetchTalent();
@@ -52,7 +73,7 @@ export default function FindTalentPage() {
     try {
       const response = await getFreelancers({ page: 1, limit: 4 });
       setFeaturedFreelancers(response?.data ?? []);
-    } catch (error) {
+    } catch {
       setFeaturedFreelancers([]);
     } finally {
       setIsFeaturedLoading(false);
@@ -63,13 +84,34 @@ export default function FindTalentPage() {
     void fetchFeaturedFreelancers();
   }, []);
 
+  const handleFilterChange = (key: keyof typeof filters, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
   const handleApplyFilters = () => {
     setPage(1);
     void fetchTalent();
   };
 
+  // Scroll to talent section when data is loaded and filters are applied
+  useEffect(() => {
+    if (!isLoading && talent.length > 0) {
+      setTimeout(() => {
+        talentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [isLoading, talent.length]);
+
   const handleClearFilters = () => {
-    setSearch("");
+    setFilters({
+      name: "",
+      jobTitle: "",
+      skills: "",
+      location: "",
+    });
     setPage(1);
   };
 
@@ -89,8 +131,7 @@ export default function FindTalentPage() {
               <h2 className="text-3xl font-bold">Featured Freelancers</h2>
             </div>
             <Button variant="outline" onClick={() => {
-              setSearch("");
-              setPage(1);
+              handleClearFilters();
             }}>
               Browse All
             </Button>
@@ -133,13 +174,13 @@ export default function FindTalentPage() {
         </section>
 
         <TalentFilters
-          search={search}
-          onSearchChange={setSearch}
+          filters={filters}
+          onFilterChange={handleFilterChange}
           onSubmit={handleApplyFilters}
           onClear={handleClearFilters}
         />
 
-        <div className="mt-10 flex flex-col gap-6">
+        <div className="mt-10 flex flex-col gap-6" ref={talentSectionRef}>
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Showing</p>

@@ -77,21 +77,28 @@ export function Navbar() {
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   const query = searchValue.trim();
-                  const searchRoute =
-                    userRole === 'Client'
-                      ? '/find-talent'
-                      : '/projects';
-                  router.push(
-                    query
-                      ? `${searchRoute}?search=${encodeURIComponent(query)}`
-                      : searchRoute
-                  );
+                  
+                  if (userRole === 'Client') {
+                    // For clients, direct to find-talent with search query as skills
+                    router.push(
+                      query
+                        ? `/find-talent?name=${encodeURIComponent(query)}`
+                        : '/find-talent'
+                    );
+                  } else {
+                    // For freelancers, direct to projects with search query
+                    router.push(
+                      query
+                        ? `/projects?search=${encodeURIComponent(query)}`
+                        : '/projects'
+                    );
+                  }
                 }
               }}
               placeholder={
                 userRole === 'Client'
-                  ? 'Search freelancers, skills, projects...'
-                  : 'Search projects, skills, freelancers...'
+                  ? 'Search freelancers'
+                  : 'Search projects, skills'
               }
               className="w-full h-10 pl-9 pr-4 rounded-full bg-muted/50 border-none focus:ring-2 focus:ring-primary focus:outline-none text-sm transition-all"
             />
